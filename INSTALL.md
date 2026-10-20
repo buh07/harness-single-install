@@ -25,7 +25,7 @@ On a POSIX shell, choose your own absolute paths. The examples below are
 placeholders, not defaults:
 
 ```sh
-git clone https://github.com/buh07/haress-single-install.git <installation-directory>
+git clone https://github.com/buh07/harness-single-install.git <installation-directory>
 cd <installation-directory>
 export HARNESS_DIR="$PWD"
 export WORKSPACE='<absolute-path-to-your-Git-product-workspace>'
@@ -34,7 +34,8 @@ export PYTHON='<absolute-path-to-Python-3.11-or-newer>'
 export CODEX_BIN='<absolute-path-to-your-native-Codex-executable>'
 ```
 
-The GitHub repository is private; authenticate as an authorized reader first.
+This distribution is public; authenticated GitHub access is required only for
+private copies or pushes.
 Use a stable installation path and record the source commit (`git rev-parse
 HEAD`). Keep the full checkout, including `adapters/`, `super-cache/`, `scripts/`,
 and `tools/`; a module-only wheel is not a complete installation. The code does

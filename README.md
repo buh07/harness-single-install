@@ -2,7 +2,7 @@
 
 **Install this distribution:** [INSTALL.md](INSTALL.md) gives the complete clone,
 configuration, native-hook trust, startup, and reopening workflow. Source remote:
-[github.com/buh07/haress-single-install](https://github.com/buh07/haress-single-install).
+[github.com/buh07/harness-single-install](https://github.com/buh07/harness-single-install).
 
 **Codex prompt selection:** start a new message with `[harness]` alone on the
 first line to request the harness after preparation. Unmarked messages are OFF

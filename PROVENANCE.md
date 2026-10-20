@@ -1,7 +1,7 @@
 # Source provenance and local additions
 
 This distribution is published at
-[github.com/buh07/haress-single-install](https://github.com/buh07/haress-single-install).
+[github.com/buh07/harness-single-install](https://github.com/buh07/harness-single-install).
 It is a separate, modified full-source repository, not a claim of upstream
 ownership or an unmodified upstream release.
 
