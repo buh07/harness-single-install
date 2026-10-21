@@ -49,17 +49,23 @@ rejection identifies input, scope/configuration, identity, or readiness failure;
 the detailed native diagnostic is obtained through the installed operator
 instructions, not by echoing potentially sensitive input/configuration.
 
-If the installed runtime is currently **CLOSED**, a marked prompt is expected to
-block. In a terminal, stop the current managed client and follow the installation
-guide to reopen the **already prepared** runtime using native `harness setup`
-once, then `scripts/prepare_root_launch.py` with the **same recorded run ID**.
-Restart/resume Codex at the manager root. A fresh preparation is different and
-must follow the existing prelaunch rules. Never delete/fabricate receipts,
-change a prepared provider binding, or blindly repeat failed setup.
+If the installed runtime is **CLOSED**, a marked prompt is expected to block.
+Follow the [installation lifecycle instructions](../INSTALL.md#7-finish-then-prepare-the-next-task):
 
-Each completed harness task shuts down to CLOSED. Therefore the next independent
-marked task needs this explicit terminal reopening/preparation/restart again.
-This is intentional lifecycle safety, **not zero-step automatic startup**.
+- **After any manager handoff:** use the
+  [fresh-run archive/preparation procedure](WORKFLOW.md#fresh-run-after-a-handed-off-task)
+  after the actual coordinator proves CLOSED and both clients are stopped.
+  An ordinary terminal or the old planner cannot impersonate the coordinator.
+- **No handoff and unchanged prepared source/configuration:** legacy native
+  `harness setup` once, followed by preparation with the same recorded run ID,
+  can reopen that existing ROOT. This does not apply to a source/hash mismatch.
+- **New installation or changed authority inputs:** follow genuine fresh
+  preparation after preserving the settled prior run. Do not fabricate/delete
+  receipts, change a prepared provider binding, or blindly repeat failed setup.
+
+Restart the correctly scoped client before submitting the marked task. Every
+finished harness task ends CLOSED; no marked prompt starts a fresh run or reopens
+anything automatically.
 
 ## What is deterministic
 
@@ -87,12 +93,24 @@ thread ownership or bind it. Keep one manager/control host and do not run
 concurrent ROOT sessions over the same runtime.
 
 **Instruction delivery is not full workflow enforcement or a security sandbox.**
-ON tells ROOT to use real harness lanes/worktrees, explicit worker preferences,
-testing/review, native watch, acceptance/retirement, and shutdown. Ask for actual
-lane IDs, worktrees, test and acceptance results, and CLOSED evidence. Generic
-Codex subagent activity or seeing hooks is not proof a native coding lane ran.
-The existing Stop hook enforces cleanup/CLOSED, not successful implementation or
-all workflow steps. This hook adds no stronger tool/completion gate.
+ON explicitly selects the configured
+[`harness-outcome-workflow` skill](../skills/harness-outcome-workflow/SKILL.md).
+For coding, planner ROOT decomposes once and transfers native manager authority
+to a distinct integration/execution coordinator. That agent checks/integrates all
+contributions and repairs the unified result itself, cycling with fresh independent
+read-only auditing against the original prompt and complete outcome ledger.
+Planner ROOT does not inspect/integrate code, delegate repairs or handle lifecycle
+work after accepted transfer. See [WORKFLOW.md](WORKFLOW.md) for the exact handoff,
+recipient bootstrap and missing-capability BLOCKED behavior. Noncoding requests
+do not need artificial coding lanes/handoff.
+
+Ask for real lane IDs/worktrees, unified revision, complete outcome/audit evidence
+and CLOSED proof. Generic Codex subagents or hook presence prove none of these.
+Schema checks reject missing coverage, stale revisions and declared nonindependence,
+but do not prove evidence truth or full compliance. The native Stop gate still
+requires CLOSED, not task success. Planner waits idle after transfer until CLOSED;
+there is no Stop bypass. No external `$CODEX_HOME/skills` installation is required:
+the hook supplies the configured portable skill's path explicitly.
 
 ## Scope, installation, and native trust
 
@@ -161,3 +179,10 @@ monitor check validates the lifecycle boundary separately. User-facing native
 trust/loading must also be checked in the actual client after installation.
 
 Native hook contract: [OpenAI hook documentation](https://learn.chatgpt.com/docs/hooks).
+
+## Source upgrades
+
+Changing pinned code/hooks may invalidate old receipts. Prove CLOSED first and
+follow [the upgrade procedure](WORKFLOW.md#upgrade-an-existing-installed-harness-safely);
+preserve/archive records and use diagnosed fresh preparation, never overwrite
+receipts or blindly repeat same-run reopening after a hash mismatch.

@@ -4,6 +4,11 @@ Upstream snapshot date: 2026-08-02. Distribution additions: 2026-10-20.
 
 ## Included
 
+- Versioned `skills/harness-outcome-workflow/` with bounded outcome assignments,
+  coordinator-owned integration/repair and independent whole-result auditing;
+  strict workflow/audit contract validators and explicit selector loading.
+  [Workflow documentation](docs/WORKFLOW.md) covers native manager handoff and upgrades.
+
 - Reusable full-source installation guide (`INSTALL.md`) and pinned upstream
   provenance (`PROVENANCE.md`).
 - Additive Codex `[harness]` first-line prompt selector, its focused tests, and

@@ -12,6 +12,7 @@ from typing import Any, BinaryIO
 
 from .config import load_config, path_identity
 from .root_session import read_root_session, resolve_root_session
+from .manager_ownership import read_ownership
 from .setup import read_runtime_state
 
 MARKER = "[harness]"
@@ -24,35 +25,46 @@ OFF_CONTEXT = (
     "worker ownership, safety, and native cleanup/Stop obligations still apply; "
     "this does not cancel, abandon, or shut down existing work."
 )
+WORKFLOW_SKILL = "skills/harness-outcome-workflow/SKILL.md"
 ON_CONTEXT = (
     "HARNESS MODE ON for this user submission only. The exact first-line "
-    "[harness] marker selected the task following it, and the existing Codex "
-    "ROOT preparation passed read-only validation at submission time. Read "
-    "the configured harness's AGENTS.md, QUICK_RULES.md, QUICK_START.md, and "
-    "local-config/INSTALLATION.md before acting. Act as ROOT: use native harness "
-    "lanes and isolated Git worktrees for implementation, explicit worker "
-    "model/preferences, one writer per scope, required independent testing and "
-    "review, native completion review/acceptance and lane retirement. Generic "
-    "Codex subagents are not substitutes for native harness coding lanes. "
-    "Preserve unrelated changes and configured storage constraints. Discover "
-    "manager work only through native watch --until-actionable; do not read "
-    "transcripts or introduce runners, supervisors, relays, retry controllers, "
-    "or automatic setup/preparation. Preserve and diagnose failures. Settle all "
-    "owned lanes and manager obligations, run native harness shutdown, and "
-    "verify CLOSED before the final response. Report real lane IDs, worktrees, "
-    "tests, acceptance/retirement results, and shutdown evidence. ON does not "
-    "persist to the next submission; it never overrides live ownership or "
-    "cleanup obligations. This hook selects the workflow and validates readiness; "
-    "it does not prove complete workflow compliance or provider isolation."
+    "[harness] marker selected the task following it, and existing Codex ROOT "
+    "preparation passed read-only validation. Explicitly load and follow the "
+    "configured versioned harness-outcome-workflow skill, plus AGENTS.md, "
+    "QUICK_RULES.md, QUICK_START.md and local-config/INSTALLATION.md. For coding "
+    "work, planner ROOT only decomposes once into one concrete checkable outcome "
+    "per coding assignment and hands off the complete original prompt, constraints, "
+    "all assignments and global outcome ledger to a distinct native integration/"
+    "execution coordinator using supported manager handoff. Do not pretend a "
+    "coding lane is a manager or invent a native session identity. After accepted "
+    "handoff planner ROOT does no checking, integration, repair delegation or "
+    "lifecycle work; the coordinator owns these duties, unified integration and "
+    "repairs, independent read-only exact-candidate auditing and native shutdown. "
+    "The coordinator and fresh independent auditor cycle directly through native "
+    "lane completion events/watch until outcomes are met or honestly blocked. "
+    "Use explicit authorized provider preferences and isolated worktrees; generic "
+    "Codex subagents do not replace native coding lanes. For noncoding requests, "
+    "answer without fabricating coding lanes or a handoff. Do not add runners, "
+    "supervisors, relays, retry controllers or automatic setup/preparation. "
+    "Preserve unrelated work, storage constraints and failures. Unavailable "
+    "handoff capabilities or permissions mean BLOCKED, not planner fallback. "
+    "Existing ownership and cleanup duties remain until transfer succeeds; the "
+    "former planner remains idle until CLOSED without a Stop bypass. ON is "
+    "per-submission, not persistent. Instruction selection/readiness does not "
+    "prove workflow compliance, successful coding or provider isolation."
 )
+
 PREPARATION_GUIDANCE = (
     "No harness work was authorized by this hook. Read the installed harness's "
     "local-config/INSTALLATION.md. Preparation must precede the managed client: "
     "stop this client, diagnose the preserved failure, and explicitly prepare "
     "in a terminal before restarting/resuming Codex at the configured manager "
-    "workspace root. For an already prepared CLOSED runtime, use native harness "
-    "setup once and scripts/prepare_root_launch.py with the SAME recorded run "
-    "ID, then restart/resume. Never delete/fabricate receipts, silently fall "
+    "workspace root. Follow docs/WORKFLOW.md lifecycle guidance: after a manager "
+    "handoff or changed prepared source, preserve/archive the proven CLOSED "
+    "runtime and run records, then genuinely prepare a fresh run. Only unchanged "
+    "legacy preparation with no handoff may use native harness setup once and "
+    "scripts/prepare_root_launch.py with the SAME recorded run ID. Never "
+    "delete/fabricate receipts, silently fall "
     "back to ordinary coding, or automatically retry setup."
 )
 
@@ -74,7 +86,9 @@ def context(text: str) -> dict[str, Any]:
 def on_context(harness_dir: Path, workspace: Path) -> dict[str, Any]:
     # Supply the actual configured instruction location rather than relying
     # on a model guessing which repository's similarly named files to read.
-    return context(ON_CONTEXT + "\nConfigured harness directory: "
+    return context(ON_CONTEXT + "\nRequired workflow skill file: "
+                   + json.dumps(str(harness_dir / WORKFLOW_SKILL)) + "."
+                   + "\nConfigured harness directory: "
                    + json.dumps(str(harness_dir)) + ". Manager workspace: "
                    + json.dumps(str(workspace)) + ".")
 
@@ -144,7 +158,11 @@ def evaluate(payload: object, *, harness_dir: Path, workspace: Path) -> dict[str
         session = read_root_session(config)
         if session["provider_id"] != "codex":
             raise OptInError("HARNESS_OPTIN_PROVIDER_MISMATCH: this workspace is not prepared for Codex ROOT.")
-        _native_identity(payload, session)
+        ownership = read_ownership(config, session)
+        effective_native = (ownership["to_native_session_id"]
+                            if ownership and ownership["state"] == "ACTIVE"
+                            else session["native_session_id"])
+        _native_identity(payload, {**session, "native_session_id": effective_native})
         resolve_root_session(config, provider_id="codex")
         # Do not enter the native validator's locks for an absent/CLOSED
         # runtime; it must never become a setup path for an unmarked task.

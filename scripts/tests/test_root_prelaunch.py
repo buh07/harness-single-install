@@ -38,7 +38,7 @@ class RootPrelaunchTests(unittest.TestCase):
         self.cleanup_config = (self.harness / "harness-config.json").read_bytes()
         self.cleanup_policy = None
         source = Path(__file__).resolve().parents[2]
-        for name in ("adapters", "super-cache", "orchestrator_harness", "harness_common", "scripts"):
+        for name in ("adapters", "super-cache", "orchestrator_harness", "harness_common", "scripts", "skills"):
             shutil.copytree(source / name, self.harness / name, ignore=shutil.ignore_patterns("__pycache__"))
         self.environment = patch.dict(os.environ, {"PYTHONPATH": str(source)}, clear=False)
         self.environment.start()

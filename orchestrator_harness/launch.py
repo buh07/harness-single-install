@@ -816,7 +816,7 @@ def run_retire(acceptance_ref: str) -> dict[str, Any]:
             write_active_lanes(rt, epoch_id, entries)
             _prune_worktrees(config.root_workspace)
             if not entries:
-                _maybe_close_epoch(rt, epoch_id)
+                _maybe_close_epoch(rt, epoch_id, config=config)
     except LaunchError as exc:
         return {
             "ok": False,
@@ -842,7 +842,7 @@ def run_retire(acceptance_ref: str) -> dict[str, Any]:
     }
 
 
-def _maybe_close_epoch(rt: Path, epoch_id: str) -> None:
+def _maybe_close_epoch(rt: Path, epoch_id: str, *, config=None) -> None:
     """Close the epoch when no active lane remains and no unresolved ROOT
     manager event remains (managed)."""
     from .lanes import reconcile_active_lanes
@@ -852,6 +852,21 @@ def _maybe_close_epoch(rt: Path, epoch_id: str) -> None:
             return
         if reconcile_active_lanes(rt, epoch_id):
             return
+        if config is not None and config.profile == "managed":
+            from .manager_ownership import ownership_path, read_ownership
+            from .root_session import read_root_session
+            try:
+                ownership_path(config).lstat()
+            except FileNotFoundError:
+                transferred = False
+            else:
+                transferred = read_ownership(config, read_root_session(config)) is not None
+            if transferred:
+                # A transferred workflow can retire its last coding lane before
+                # starting an independent auditor or another repair/audit pass.
+                # Keep its native epoch and manager scope until explicit native
+                # shutdown; no active lane or successful task is implied.
+                return
         if state.get("lane_mode") == "managed":
             queue = read_manager_queue(rt)
             if any(event["state"] in ("PENDING", "ACKNOWLEDGED") for event in queue["events"]):

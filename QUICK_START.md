@@ -34,6 +34,16 @@ Write `resource-manifest.json` (closed `resource-manifest/v1` shape):
 Declare each exclusive resource as `{"id": "<name>", "exclusive": true}` in `resources`.
 `managed_coordination: "disabled"` runs plain lanes without the manager queue.
 
+## Default coding workflow
+
+Accepted `[harness]` coding prompts explicitly load
+[the outcome workflow skill](skills/harness-outcome-workflow/SKILL.md). Planner
+ROOT decomposes once; a distinct execution coordinator owns checking, integration,
+repairs and cleanup, cycling with independent read-only whole-result auditing.
+Read [WORKFLOW.md](docs/WORKFLOW.md) for contract/handoff and unmarked recipient
+bootstrap. No supported distinct native manager client means BLOCKED, not a
+planner fallback. Noncoding requests need no artificial coding lanes.
+
 ## 2. Prepare before ROOT starts
 
 For a fresh managed ROOT, run pre-launch preparation FIRST: it performs the one native setup
@@ -59,8 +69,12 @@ Manual native integration remains available:
 python -m orchestrator_harness.operator_launch harness setup
 ```
 
-It is for plain/manual integration and for reopening an already prepared ROOT. Reopening an
-already prepared ROOT revalidates the existing receipt instead of repeating setup. For a
+It is for plain/manual integration and for legacy reopening when **no manager
+handoff was offered** and prepared source/configuration are unchanged. After an
+outcome-workflow handoff, the actual coordinator owns shutdown; the next task uses
+[archived fresh-run preparation](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task),
+not terminal same-run reopening. Reopening an unchanged legacy ROOT revalidates the
+existing receipt instead of repeating setup. For a
 prepared CLOSED runtime, run native `harness setup` first, then pre-launch preparation with the
 SAME run ID: preparation revalidates the prior receipt/session/config/hooks and the exact stopped
 service owner, explicitly starts the enabled service with a fresh startup identity, and archives

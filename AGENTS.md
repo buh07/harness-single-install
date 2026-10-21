@@ -33,18 +33,27 @@ archived plans and historical ownership records do not grant additional work.
   Finish when the everyday workflows work end to end and serious risks are
   covered; exhaustive internal-path audits and repeated whole-product review
   cohorts are not required.
-- Assign product implementation and substantive integration repairs to fresh,
-  scoped implementation workers, including shared-file changes. ROOT approves
-  scopes/results, evaluates criticisms, integrates approved work, and manages
-  agents and shutdown. Transfer shared paths with one implementation writer at a
-  time; ROOT does not become the default coder or edit worker-owned files.
+- Assign product implementation to fresh, scoped implementation workers. In the
+  outcome workflow, planning ROOT only decomposes the original request and makes
+  the supported explicit native manager handoff. The execution/integration
+  coordinator then exclusively owns the logical ROOT lifecycle, integration,
+  checks, bounded integration repairs, acceptance, retirement, and shutdown. It
+  receives the complete original prompt and every assigned outcome. Transfer
+  shared paths with one implementation writer at a time; planning ROOT does not
+  code, check, integrate, or delegate repairs after handoff. This is an explicit
+  ownership transfer, not an autonomous harness replacement for a manager.
 - Testing, validation, and review subagents are advisory only. They can NEVER
   block progress, veto acceptance, require fixes, or prevent shutdown. ROOT alone
-  judges their criticisms and assigns justified repairs. Pending reports and
+  judges their criticisms; under the outcome workflow that owner is the
+  execution/integration coordinator, which performs justified bounded repairs.
+  Pending reports and
   reviewer verdicts are never completion dependencies; actual checks are reported
   honestly. Advisory agents have read-only product source and private evidence,
-  with no product writing/resource lease or required managed-lane acceptance/Stop
-  obligation.
+  with no product writing/resource lease. When an auditor is an actual native
+  lane, its normal identity, RESULT, settlement, retirement and Stop obligations
+  still apply; advisory status never bypasses cleanup. A missing audit cannot
+  hold shutdown hostage, but means the result is not independently verified and
+  must be reported incomplete rather than successful.
 - Deploy fresh independent testers for each completed implementation step and
   fresh semantic reviewers after the first full coding workflow, after retry/
   cancellation/service work, and with final testing before delivery. Use fixed

@@ -112,9 +112,11 @@ def resolve_root_session(config: HarnessConfig, *, session_id: str | None = None
             or (binding is not None and binding != record["provider_id"])
             or (provider_id is not None and provider_id != record["provider_id"])):
         raise ConfigError("ROOT_SESSION_MISMATCH: explicit ROOT session/provider differs from prepared binding")
+    from .manager_ownership import require_manager_owner
+    ownership = require_manager_owner(config, record)
     native_name = {"codex": "CODEX_THREAD_ID", "claude-code": "CLAUDE_SESSION_ID", "qwen-code": "QWEN_SESSION_ID"}[record["provider_id"]]
     native = os.environ.get(native_name)
-    if native and record["native_session_id"] is not None and native != record["native_session_id"]:
+    if ownership is None and native and record["native_session_id"] is not None and native != record["native_session_id"]:
         raise ConfigError("ROOT_SESSION_MISMATCH: native provider session differs from prepared binding")
     return record["session_id"], record["provider_id"]
 

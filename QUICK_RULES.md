@@ -2,8 +2,12 @@
 
 ## Authority
 
-1. One persistent manager owns planning, lane assignment, launches, decisions, integration,
-   acceptance, promotion, and final cleanup.
+1. One native manager owns execution authority at a time. The default
+   [outcome workflow](skills/harness-outcome-workflow/SKILL.md) has planner ROOT
+   decompose once then explicitly hand authority to a distinct integration/execution
+   coordinator. After acceptance, the coordinator owns launches, checking, integration,
+   repairs, acceptance, retirement and shutdown; planner ROOT remains idle until CLOSED.
+   See [handoff and recipient bootstrap](docs/WORKFLOW.md).
 2. One coding worker runs in each active branch/worktree lane.
 3. A merge worker integrates only the branches assigned by the manager.
 4. The native observer reports facts and delivers durable events; it does not schedule or decide.
@@ -58,10 +62,15 @@
   setup internally. Windows Codex requires the read-only CLI/home/cache/marker/probe gate before
   preparation and it cannot be disabled by missing local policy; other ROOT providers are selected
   explicitly and the Codex gate is never bypassed. Manual `harness setup` is for plain/manual
-  integration and for reopening an already prepared ROOT, where preparation revalidates the same
-  run-id receipt instead of repeating setup. Never delete or fabricate runtime records or receipts.
+  integration and unchanged legacy reopening only: no offered manager handoff and no changed
+  prepared source/configuration. After an outcome-workflow handoff or source upgrade, the actual
+  coordinator owns shutdown and the next task needs guarded archival plus genuine fresh-run
+  preparation, not terminal same-run reopening. Follow
+  [WORKFLOW.md](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task).
+  Never delete or fabricate runtime records or receipts.
 - Managed ROOT Stop requires runtime CLOSED, not just an empty queue. CLOSED proves cleanup,
-  not task success. Carry fresh-validator/public-evidence requirements in the actual run prompt.
+  not task success. Require exact-revision independent audit of every assigned and cross-cutting
+  outcome. Instruction selection/schema checks do not prove task completion.
 
 ## Runtime hygiene
 

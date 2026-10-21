@@ -417,6 +417,13 @@ def _build_parser() -> argparse.ArgumentParser:
     close_parser.add_argument("--outcome", required=True, choices=["COMPLETE", "BLOCKED"])
     close_parser.add_argument("--summary", required=True, type=_nonblank_summary)
 
+    offer_parser = manager_sub.add_parser("handoff-offer", help="offer prepared manager ownership to a distinct native conversation")
+    offer_parser.add_argument("--to-native-session-id", required=True)
+    offer_parser.add_argument("--contract", required=True)
+    accept_parser = manager_sub.add_parser("handoff-accept", help="accept exact offered manager ownership from target native conversation")
+    accept_parser.add_argument("--offer-id", required=True)
+    accept_parser.add_argument("--contract-sha256", required=True)
+
     lease = subparsers.add_parser("lease", help="exclusive-resource lease commands")
     lease_sub = lease.add_subparsers(dest="lease_command", required=True)
     force_release_parser = lease_sub.add_parser(
@@ -446,6 +453,27 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
+    from pathlib import Path
+    from .manager_ownership import accept_handoff, manager_operation, offer_handoff
+    if args.command == "manager" and args.manager_command in ("handoff-offer", "handoff-accept"):
+        config = load_config(find_harness_root())
+        if args.manager_command == "handoff-offer":
+            return offer_handoff(config, to_native_session_id=args.to_native_session_id, contract_path=Path(args.contract))
+        return accept_handoff(config, offer_id=args.offer_id, contract_sha256=args.contract_sha256)
+    # scan --no-write is diagnostic; every other public operation, including
+    # shutdown, is exclusive to the current owner after an offered handoff.
+    try:
+        config = load_config(find_harness_root())
+    except (ConfigError, OSError, ValueError):
+        # Native commands retain their own precise configuration diagnostics.
+        return _dispatch_owned(args)
+    if args.command == "scan" and args.no_write:
+        return _dispatch_owned(args)
+    with manager_operation(config):
+        return _dispatch_owned(args)
+
+
+def _dispatch_owned(args: argparse.Namespace) -> dict[str, Any]:
     command = args.command
     if command == "harness":
         if args.harness_command == "setup":

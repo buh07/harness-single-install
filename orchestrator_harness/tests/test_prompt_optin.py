@@ -59,6 +59,30 @@ class PromptOptInTests(unittest.TestCase):
         if code:
             self.assertIn(code, result["reason"])
 
+    def test_on_explicitly_selects_configured_portable_skill(self) -> None:
+        self.mocks()
+        result = self.call()["hookSpecificOutput"]["additionalContext"]
+        self.assertIn(str(self.harness / "skills/harness-outcome-workflow/SKILL.md"), result)
+        self.assertIn("planner ROOT only decomposes once", result)
+        self.assertIn("For noncoding requests", result)
+        self.assertIn("Instruction selection/readiness does not", result)
+
+    def test_active_coordinator_payload_replaces_prepared_native_identity(self) -> None:
+        self.mocks()
+        with patch.object(optin, "read_ownership", return_value={
+                "state": "ACTIVE", "to_native_session_id": "native-coordinator"}):
+            self.assertEqual(optin.on_context(self.harness, self.workspace), self.call({
+                **self.payload, "session_id": "native-coordinator"}))
+            self.assert_blocked(self.call(), "IDENTITY_MISMATCH")
+
+    def test_offered_handoff_does_not_change_prompt_authority(self) -> None:
+        self.mocks()
+        with patch.object(optin, "read_ownership", return_value={
+                "state": "OFFERED", "to_native_session_id": "native-coordinator"}):
+            self.assertEqual(optin.on_context(self.harness, self.workspace), self.call())
+            self.assert_blocked(self.call({**self.payload, "session_id": "native-coordinator"}),
+                                "IDENTITY_MISMATCH")
+
     def test_exact_marker_truth_table(self) -> None:
         cases = {
             "[harness]": True, "[harness]\nTask": True,

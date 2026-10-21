@@ -9,7 +9,11 @@ first line to request the harness after preparation. Unmarked messages are OFF
 for that submission. The marker does not start a closed runtime. See
 [the prompt opt-in guide](docs/PROMPT_OPT_IN.md) and
 [source provenance / license caveat](PROVENANCE.md). Claude/Qwen do not gain this
-Codex-only selector.
+Codex-only selector. Accepted coding prompts explicitly load the portable
+[harness-outcome-workflow skill](skills/harness-outcome-workflow/SKILL.md): planner
+ROOT splits once, a separate execution coordinator integrates and repairs, and
+an independent auditor checks the complete unified result. See
+[workflow and native authority handoff](docs/WORKFLOW.md).
 
 The Harness v2 coordinates ordinary software work across Git branches and worktrees. One public
 launcher exposes the entire operator surface:
@@ -51,7 +55,7 @@ module-only, so a `--target` install needs the sibling trees copied in from the 
 3. Install it into a new harness root target:
    `python -B -m pip install --no-deps --no-index --no-compile --target <new-harness-root> <actual-wheel>`
 4. From the same source, copy `adapters/`, `super-cache/`, `scripts/`, `tools/`,
-   `harness_watcher_implementation/`, `docs/`, `examples/`, the top-level operating files and
+   `harness_watcher_implementation/`, `docs/`, `skills/`, `examples/`, the top-level operating files and
    `.gitignore` into the target, preserving the pip-installed modules. Test material is
    validation-only and is not part of the module wheel.
 5. Create explicit operator `harness-config.json` and `resource-manifest.json` in the target and
@@ -66,7 +70,9 @@ Installing the product does not by itself prove a live provider or sandbox run.
   acceptance.
 - Does not: schedule work, choose providers, decide outcomes, accept results, operate hardware,
   or replace the root orchestrator. The persistent manager owns planning, launches, decisions,
-  integration, acceptance, promotion, and final cleanup. The optional watcher is diagnostic-only
+  integration, acceptance, promotion, and final cleanup. In the default outcome
+  workflow, planner ROOT hands authority to a distinct native execution coordinator
+  after decomposition; it does not remain the technical manager. The optional watcher is diagnostic-only
   with `evaluator_enabled: false`.
 
 ## Public CLI surface
@@ -123,9 +129,12 @@ The sole public CLI is `operator_launch`. Its groups and subcommands:
    creates an epoch or worktree.
 4. Manual native integration remains available with
    `python -m orchestrator_harness.operator_launch harness setup` for plain/manual integration and
-   for reopening an already prepared ROOT (`--overwrite` only for a separately diagnosed
-   integration change). Reopening an already prepared ROOT revalidates the existing receipt
-   instead of repeating setup. For a prepared CLOSED runtime, run native `harness setup` first,
+   for legacy reopening **only when no manager handoff was offered and prepared source/config
+   are unchanged** (`--overwrite` only for a separately diagnosed integration change).
+   After an outcome-workflow handoff or source upgrade, use the guarded
+   [fresh-run archival and genuine preparation](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task)
+   instead; the actual coordinator owns shutdown. Legacy reopening revalidates the existing
+   receipt instead of repeating setup. For that unchanged legacy CLOSED runtime, run native `harness setup` first,
    then pre-launch preparation with the SAME run ID: preparation revalidates the prior
    receipt/session/config/hooks and the exact stopped service owner, explicitly starts the enabled
    service with a fresh startup identity, and archives the old owner, config and receipt. A lane

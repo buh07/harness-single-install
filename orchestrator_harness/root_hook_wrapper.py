@@ -108,7 +108,7 @@ def translate(boundary: str, decision: dict[str, Any]) -> dict[str, Any]:
     return {"continue": False, "stopReason": str(reason)}
 
 
-def run(provider_id: str, boundary: str, binding_path: Path) -> dict[str, Any]:
+def _run_owned(provider_id: str, boundary: str, binding_path: Path) -> dict[str, Any]:
     """Run one ROOT hook and return its native JSON output object."""
     try:
         binding = _read_binding(binding_path, provider_id)
@@ -185,3 +185,24 @@ def run(provider_id: str, boundary: str, binding_path: Path) -> dict[str, Any]:
     except Exception as exc:
         decision = {"decision": "REJECT", "reason": str(exc)}
     return translate(boundary, decision)
+
+
+def run(provider_id: str, boundary: str, binding_path: Path) -> dict[str, Any]:
+    """Never deliver manager events to a retired planner; CLOSED still permits exit."""
+    try:
+        binding = _read_binding(binding_path, provider_id)
+        config = load_config(Path(binding["harness_root"]))
+        if config.profile == "managed":
+            from .setup import read_runtime_state
+            from .manager_ownership import manager_operation
+            from .shutdown import prove_runtime_closed
+            if (read_runtime_state(config.runtime_root) or {}).get("state") == "CLOSED":
+                # Cleanup proof is required even for the retired planner. Do not
+                # append delivery receipts or revive its old ownership here.
+                prove_runtime_closed(config.runtime_root, config.root_workspace, config.harness_root)
+                return {}
+            with manager_operation(config):
+                return _run_owned(provider_id, boundary, binding_path)
+        return _run_owned(provider_id, boundary, binding_path)
+    except Exception as exc:
+        return translate(boundary, {"decision": "REJECT", "reason": str(exc)})

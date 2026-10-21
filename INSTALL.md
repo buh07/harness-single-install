@@ -336,7 +336,7 @@ requesting harness work; it is not sticky. During the model's internal steps you
 do not need to send the marker again.
 
 - **Exact marker + ready OPEN runtime:** validate prepared identities/receipts and
-  deliver harness workflow instructions to ROOT.
+  explicitly select the portable `skills/harness-outcome-workflow/SKILL.md`.
 - **Unmarked message at the manager root:** explicit OFF for this submission;
   no automatic setup or launch. Existing work/cleanup obligations still apply.
 - **Marked but unprepared, CLOSED, stale, or mismatched:** block instead of
@@ -351,23 +351,35 @@ Code needs model. Require actual lane IDs/worktrees, tests/review/acceptance,
 retirement, and CLOSED evidence in the result. Generic subagent activity is not
 proof a native harness lane ran.
 
-## 7. Finish, then explicitly reopen for the next task
+## 7. Finish, then prepare the next task
 
-ROOT must handle manager events via native watch, settle and retire lanes, and
-run `harness shutdown`. A terminal operator can also use the native CLI:
+Under the default workflow, planner ROOT decomposes once and uses the
+[explicit native manager handoff](docs/WORKFLOW.md). The distinct execution
+coordinator handles native events, checks/integrates all assignments, repairs the
+candidate and cycles with an independent read-only auditor. **That coordinator's
+actual native conversation** settles/retires lanes and runs:
 
 ```sh
 cd "$HARNESS_DIR"
 "$PYTHON" -B -m orchestrator_harness.operator_launch harness shutdown
-"$PYTHON" -B -m orchestrator_harness.operator_launch scan --no-write
 ```
 
-Require the shutdown command to succeed and prove **CLOSED**; an empty queue or a
-successful scan alone is not completion. CLOSED proves cleanup, not task success.
+Planner ROOT remains idle until CLOSED. After an offer/accept handoff, an ordinary
+terminal lacking the owner's native identity cannot run manager mutations. Do not
+copy/forge `CODEX_THREAD_ID` or other native identity variables to bypass this.
+Resume the actual owner conversation if interrupted. A read-only terminal
+`scan --no-write` remains diagnostic; a successful scan or empty queue is not a
+CLOSED proof or task success.
 
-The next independent marked task needs explicit reopening **before** the client
-starts. Stop the previous ROOT client, keep the same paths/configuration/provider
-and recorded run ID, then:
+**After a handed-off run:** the next independent task requires a genuinely fresh
+run/epoch. First have the coordinator prove CLOSED, stop both native clients,
+then preserve/archive the settled runtime and old run records using the
+[concrete fresh-run procedure](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task).
+Run genuine preparation with a new run ID, restart the planner client, and submit
+the next marked task. The old ACTIVE handoff is not authority for a future epoch.
+
+**Only if no handoff was offered, source/configuration are unchanged, and the
+existing prepared ROOT is CLOSED:** the legacy same-run reopening remains:
 
 ```sh
 cd "$HARNESS_DIR"
@@ -377,11 +389,10 @@ cd "$HARNESS_DIR"
   --run-id "$HARNESS_RUN_ID" --provider codex
 ```
 
-This sequence is for an **already prepared CLOSED runtime**, not fresh setup.
-Preparation revalidates the existing authority; neither command automatically
-retries. Stop on failure, preserve evidence, and diagnose rather than deleting
-receipts, changing run IDs, using `--overwrite` speculatively, or repeatedly
-running setup. Restart/resume the client and submit the next marked task.
+Stop on failure and diagnose; neither command automatically retries. This legacy
+sequence is **not** the next-task procedure after a manager handoff, nor a repair
+for source/hash changes. Never fabricate receipts, change run IDs over existing
+records, use `--overwrite` speculatively, or repeatedly run setup.
 
 ## Limits, troubleshooting, and removal
 
@@ -419,3 +430,11 @@ in the actual target environment before claiming end-to-end provider proof.
 
 Official native contract: [OpenAI hooks documentation](https://learn.chatgpt.com/docs/hooks).
 Provenance and redistribution caveat: [PROVENANCE.md](PROVENANCE.md).
+
+## Upgrading source with existing receipts
+
+Use [the safe upgrade procedure](docs/WORKFLOW.md#upgrade-an-existing-installed-harness-safely).
+Prove CLOSED before changing code. Preserve/archive prior run records; changed
+hashed inputs require diagnosed fresh preparation, not overwritten PASS receipts
+or blind same-run reopening. No external skill installation is needed because
+the selector explicitly gives the configured portable skill path.
