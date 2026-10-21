@@ -81,6 +81,15 @@ for both native calls (as in INSTALL); use no copied authentication. Set explici
 not Windows quoting recipes. Do not silently enable danger-full-access or bypass
 hooks, sandbox, approval, trust or health gates. Native/model calls may cost money.
 
+Readiness and acceptance must observe the exact host monitor process. Some Linux
+workspace-write/PID-namespace profiles cannot see that healthy process; this was
+a [real historical blocker](REAL_WORKFLOW_TEST.md#earlier-attempts-and-diagnosed-fixes),
+not a reason to retry or forge readiness. The gateway hook also performs readiness
+validation, so its native execution profile must support those checks. If the
+current profile cannot, report BLOCKED and obtain an explicit operator-approved
+profile/capability before proceeding. Prior v1 test permission approval grants
+no v3 permission changes, and never grants coding/audit workers a bypass.
+
 Before preparation opens the runtime, with any previous run proved CLOSED:
 
 ```sh
