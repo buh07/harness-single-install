@@ -344,8 +344,10 @@ do not need to send the marker again.
 - **Different or nested CWD:** the selector is inert, even inside a nested Git
   project. Start at the exact manager root to use it.
 
-Tell ROOT your actual task, desired provider/model/preferences, and acceptance
-criteria. Worker launch preferences have no defaults: Codex needs model,
+Tell ROOT your actual task, desired provider/model/preferences (including the
+initial split reviewer, coding agents, integrator and final auditor), and acceptance
+criteria. Explicit preferences are declarations, not extra authorization or premium
+tier defaults. Worker launch preferences have no defaults: Codex needs model,
 `reasoning_effort`, and `service_tier`; Claude Code needs model and `effort`; Qwen
 Code needs model. Require actual lane IDs/worktrees, tests/review/acceptance,
 retirement, and CLOSED evidence in the result. Generic subagent activity is not
@@ -353,10 +355,20 @@ proof a native harness lane ran.
 
 ## 7. Finish, then prepare the next task
 
-Under the default workflow, planner ROOT decomposes once and uses the
-[explicit native manager handoff](docs/WORKFLOW.md). The distinct execution
-coordinator handles native events, checks/integrates all assignments, repairs the
-candidate and cycles with an independent read-only auditor. **That coordinator's
+Under default workflow v2, planner ROOT drafts useful bounded coding assignments,
+obtains an independent native split review, records reasoned resolutions, and
+settles/retires that planning lane **before** the
+[explicit native manager handoff](docs/WORKFLOW.md). The frozen plan includes the
+original prompt, all outcomes/cards, context/interfaces and overall criteria. A
+single small coding lane is valid; avoid splitting just to increase agent count.
+The distinct execution coordinator handles native events and integration. It
+repairs the candidate **itself**, not through planner ROOT or original coders;
+after material changes it reruns every original outcome/global check and obtains
+a fresh independent read-only audit of the exact new revision. Continue until all
+original outcomes work together and the whole request is satisfied, or honestly
+report BLOCKED/INCOMPLETE at authorized bounds. Reviewer advice is not a veto;
+explain rejected findings, preserve failures, and never weaken outcomes or reuse
+stale approval. Missing evidence cannot hold shutdown hostage. **That coordinator's
 actual native conversation** settles/retires lanes and runs:
 
 ```sh

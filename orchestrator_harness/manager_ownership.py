@@ -173,6 +173,88 @@ def _ready(config: HarnessConfig, session: dict[str, Any]) -> None:
     validate_prepared_root(config.harness_root, config.manager_workspace, session["run_id"], provider_id=session["provider_id"])
 
 
+def _require_native_plan_review(config: HarnessConfig, session: dict[str, Any],
+                                contract: dict[str, Any], planner: str, target: str) -> None:
+    """Bind reviewed v2 declarations to a settled actual native planning lane.
+
+    A review's criticisms remain advisory. Native retirement/cleanup is required
+    before transfer, not a reviewer PASS verdict. Source read-only is established
+    by unchanged base commit/clean result plus the assignment, not OS immutability.
+    """
+    from datetime import datetime
+    from .workflow_contract import CONTRACT_SCHEMA, validate_plan_review
+    if contract["schema"] != CONTRACT_SCHEMA:
+        return  # Saved v1 workflows retain their historical contract.
+    from .epochs import epoch_dir
+    from .lanes import read_lane, retained_lanes
+    from .lane_cleanup import cleanup_is_proven, observe_controller_status
+    from .lane_authority import read_invocation
+    from .result_validation import read_result
+    from .launch import _validate_current_acceptance
+    from .review import ACCEPTANCE_SCHEMA
+    from .manager_queue import validate_queue_record
+    from .retry_policy import current_invocation_facts
+    envelope = contract["plan_review"]
+    ref = envelope["native_review"]
+    report = envelope["report"]
+    if any(ref[key] != session[field] or report[key] != session[field]
+           for key, field in (("prepared_run_id", "run_id"), ("root_session_id", "session_id"))):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_SCOPE: review must belong to this genuine prepared ROOT run")
+    epoch_id = ref["epoch_id"]
+    epoch = read_epoch_state(config.runtime_root, epoch_id)
+    current = read_current_epoch(config.runtime_root)
+    if (epoch.get("config_identity") != session["config_identity"]
+            or epoch.get("lane_mode") != "managed"
+            or (current is not None and current["epoch_id"] != epoch_id)
+            or epoch.get("lifecycle") not in {"active", "closed"}):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_SCOPE: review epoch differs from current planning scope")
+    for lane in retained_lanes(config.runtime_root, epoch_id).values():
+        if lane.get("lifecycle") not in {"retired", "abandoned"} or not cleanup_is_proven(lane):
+            raise ConfigError("MANAGER_SPLIT_REVIEW_UNSETTLED: retire/settle planning lanes before handoff")
+    queue_path = (epoch_dir(config.runtime_root, epoch_id) / "CLOSED_MANAGER_QUEUE.json"
+                  if epoch["lifecycle"] == "closed" else config.runtime_root / "manager" / "QUEUE.json")
+    queue = read_record(queue_path, "manager-queue/v1")
+    validate_queue_record(queue)
+    if (queue.get("epoch_id") != epoch_id or queue.get("queue_id") != epoch.get("queue_id")
+            or any(event["state"] in {"PENDING", "ACKNOWLEDGED"} for event in queue["events"])):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_UNSETTLED: native planning events must be settled before handoff")
+    lane = read_lane(config.runtime_root, epoch_id, ref["lane_id"])
+    if lane.get("run_id") != ref["run_id"] or lane.get("lifecycle") != "retired" or lane.get("exclusive_resources"):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_LANE: exact retired resource-free review invocation required")
+    expected = contract["split_reviewer"]
+    from .bootstrap import _validate_provider_launch_config
+    preferences = _validate_provider_launch_config(Path(__file__).resolve().parent.parent,
+        provider_id=expected["provider"], model=expected["model"], launch_config=expected["provider_options"])
+    if lane.get("provider") != {"id": expected["provider"], "model": expected["model"],
+                                "launch_config": preferences}:
+        raise ConfigError("MANAGER_SPLIT_REVIEW_PREFERENCES: native reviewer differs from explicit preferences")
+    read_invocation(lane)
+    result = read_result(lane, clean=True)
+    acceptance = read_record(epoch_dir(config.runtime_root, epoch_id) / "lanes" / ref["lane_id"]
+                             / "ORCHESTRATOR_ACCEPTANCE.json", ACCEPTANCE_SCHEMA)
+    _validate_current_acceptance(config.runtime_root, epoch_id, lane, acceptance)
+    status = observe_controller_status(lane).status or {}
+    native = (status.get("provider_state") or {}).get("provider_session_id")
+    facts = current_invocation_facts(lane)
+    completed = [item for item in facts if item["kind"] == "COMPLETED"]
+    if (not isinstance(native, str) or not native.strip() or not completed
+            or any(item.get("session_id") != native for item in completed)):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_IDENTITY: actual native reviewer identity is unproven")
+    validate_plan_review(report, contract, planner_session_id=planner, reviewer_session_id=native)
+    if native == target:
+        raise ConfigError("MANAGER_SPLIT_REVIEW_IDENTITY: reviewer cannot become integration coordinator")
+    if (result["commit"] != lane["git_source"]["base_commit"]
+            or sha256_hex(result) != ref["result_sha256"]
+            or {"plan_review": report} not in result["evidence"]
+            or datetime.fromisoformat(result["completed_at"].replace("Z", "+00:00"))
+               < datetime.fromisoformat(session["prepared_at"].replace("Z", "+00:00"))):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_RESULT: exact current read-only native RESULT/report linkage required")
+    if not any(event.get("lane_id") == ref["lane_id"] and event.get("run_id") == ref["run_id"]
+               and event.get("type") == "COMPLETION_REVIEW_REQUIRED" and event["state"] == "COMPLETE"
+               for event in queue["events"]):
+        raise ConfigError("MANAGER_SPLIT_REVIEW_UNSETTLED: completed native review event required")
+
+
 def offer_handoff(config: HarnessConfig, *, to_native_session_id: str, contract_path: Path) -> dict[str, Any]:
     from .root_session import read_root_session, resolve_root_session
     from .workflow_contract import validate_contract
@@ -190,6 +272,7 @@ def offer_handoff(config: HarnessConfig, *, to_native_session_id: str, contract_
             raise ConfigError("MANAGER_HANDOFF_PROVIDER: cross-provider ownership is unsupported")
         _ready(config, session)
         _not_registered_lane(config, to_native_session_id)
+        _require_native_plan_review(config, session, contract, original, to_native_session_id)
         with RecordLock(ownership_path(config)):
             if read_ownership(config, session) is not None:
                 raise ConfigError("MANAGER_HANDOFF_EXISTS: this prepared epoch already has a handoff; preserve it")

@@ -7,7 +7,9 @@ import unittest
 from orchestrator_harness.workflow_contract import validate_contract, validate_audit
 from orchestrator_harness.core import sha256_hex
 
-EXAMPLE = Path(__file__).resolve().parents[2] / 'skills/harness-outcome-workflow/references/contract.example.json'
+EXAMPLE = Path(__file__).resolve().parents[2] / 'skills/harness-outcome-workflow/references/contract.v1.example.json'
+if not EXAMPLE.exists():
+    EXAMPLE = EXAMPLE.with_name('contract.example.json')
 REVISION = 'a' * 40
 
 

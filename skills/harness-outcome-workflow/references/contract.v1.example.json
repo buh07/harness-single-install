@@ -1,0 +1,88 @@
+{
+  "schema": "harness-outcome-workflow/v1",
+  "original_prompt": "Reject expired tokens with HTTP 401 without breaking valid-token requests.",
+  "constraints": [
+    "Keep the public API unchanged; do not push or publish."
+  ],
+  "outcomes": [
+    {
+      "id": "expired-token",
+      "description": "Expired tokens are rejected with HTTP 401.",
+      "acceptance_criteria": [
+        "Expired-token regression test returns HTTP 401."
+      ],
+      "assignment_ids": [
+        "token-rejection"
+      ]
+    },
+    {
+      "id": "valid-token",
+      "description": "Valid-token requests remain successful.",
+      "acceptance_criteria": [
+        "Existing valid-token regression remains green on the unified candidate."
+      ],
+      "assignment_ids": []
+    }
+  ],
+  "assignments": [
+    {
+      "id": "token-rejection",
+      "task": "Implement expired-token rejection.",
+      "goal": "Expired tokens produce HTTP 401.",
+      "outcome_ids": [
+        "expired-token"
+      ],
+      "scope": [
+        "Authentication handler and focused regression tests."
+      ],
+      "exclusions": [
+        "Public API redesign."
+      ],
+      "dependencies": [],
+      "acceptance_criteria": [
+        "Expired-token test returns HTTP 401."
+      ],
+      "deliverables": [
+        "Handler change and regression test."
+      ],
+      "checks": [
+        "Run the focused authentication regression suite."
+      ],
+      "provider": "codex",
+      "model": "operator-selected-model",
+      "provider_options": {
+        "reasoning_effort": "high",
+        "service_tier": "normal"
+      }
+    }
+  ],
+  "integration_criteria": [
+    {
+      "id": "unified-auth",
+      "description": "Expired and valid token cases both pass together.",
+      "outcome_ids": [
+        "expired-token",
+        "valid-token"
+      ],
+      "checks": [
+        "Run both regressions at the exact integrated revision."
+      ]
+    }
+  ],
+  "coordinator": {
+    "provider": "codex",
+    "model": "operator-selected-model",
+    "provider_options": {
+      "reasoning_effort": "high",
+      "service_tier": "normal"
+    }
+  },
+  "auditor": {
+    "provider": "codex",
+    "model": "operator-selected-model",
+    "provider_options": {
+      "reasoning_effort": "high",
+      "service_tier": "normal"
+    }
+  }
+}

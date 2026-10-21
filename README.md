@@ -11,9 +11,16 @@ for that submission. The marker does not start a closed runtime. See
 [source provenance / license caveat](PROVENANCE.md). Claude/Qwen do not gain this
 Codex-only selector. Accepted coding prompts explicitly load the portable
 [harness-outcome-workflow skill](skills/harness-outcome-workflow/SKILL.md): planner
-ROOT splits once, a separate execution coordinator integrates and repairs, and
-an independent auditor checks the complete unified result. See
-[workflow and native authority handoff](docs/WORKFLOW.md).
+ROOT drafts bounded assignments, an independent native reviewer critiques the split,
+and ROOT resolves that feedback before freezing a handoff. A separate execution
+coordinator integrates and repairs, cycling with fresh independent exact-revision
+auditors until **all original outcomes work together and the whole request is
+satisfied**, or reporting honest incompleteness at resource/permission bounds.
+Use as many useful independent lanes as warranted—not a maximum count; one small
+lane is valid. See
+[workflow and native authority handoff](docs/WORKFLOW.md). The default skill is v2;
+[historical real-provider evidence](docs/REAL_WORKFLOW_TEST.md) covers v1 only,
+not a new native test of v2 initial split review or an actual repair cycle.
 
 The Harness v2 coordinates ordinary software work across Git branches and worktrees. One public
 launcher exposes the entire operator surface:
@@ -72,7 +79,7 @@ Installing the product does not by itself prove a live provider or sandbox run.
   or replace the root orchestrator. The persistent manager owns planning, launches, decisions,
   integration, acceptance, promotion, and final cleanup. In the default outcome
   workflow, planner ROOT hands authority to a distinct native execution coordinator
-  after decomposition; it does not remain the technical manager. The optional watcher is diagnostic-only
+  after independently reviewed planning and reasoned resolution; it does not remain the technical manager. The optional watcher is diagnostic-only
   with `evaluator_enabled: false`.
 
 ## Public CLI surface

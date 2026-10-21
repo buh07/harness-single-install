@@ -4,9 +4,13 @@
 
 1. One native manager owns execution authority at a time. The default
    [outcome workflow](skills/harness-outcome-workflow/SKILL.md) has planner ROOT
-   decompose once then explicitly hand authority to a distinct integration/execution
-   coordinator. After acceptance, the coordinator owns launches, checking, integration,
+   resolve an independent initial split review, settle/retire its planning lane,
+   then explicitly hand the frozen complete plan to a distinct integration/execution
+   coordinator. Coding lanes must be useful independent bounded goals, not maximum count. After acceptance, the coordinator owns launches, checking, integration,
    repairs, acceptance, retirement and shutdown; planner ROOT remains idle until CLOSED.
+   The coordinator repairs itself, reruns every original outcome/global check and
+   gets a fresh independent audit of each material new revision. All outcomes must
+   work together; incomplete results still require cleanup, not a manufactured PASS.
    See [handoff and recipient bootstrap](docs/WORKFLOW.md).
 2. One coding worker runs in each active branch/worktree lane.
 3. A merge worker integrates only the branches assigned by the manager.

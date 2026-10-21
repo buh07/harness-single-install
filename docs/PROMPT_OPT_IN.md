@@ -111,10 +111,16 @@ concurrent ROOT sessions over the same runtime.
 **Instruction delivery is not full workflow enforcement or a security sandbox.**
 ON explicitly selects the configured
 [`harness-outcome-workflow` skill](../skills/harness-outcome-workflow/SKILL.md).
-For coding, planner ROOT decomposes once and transfers native manager authority
-to a distinct integration/execution coordinator. That agent checks/integrates all
-contributions and repairs the unified result itself, cycling with fresh independent
-read-only auditing against the original prompt and complete outcome ledger.
+For coding, default skill v2 has planner ROOT obtain an independent initial split
+review of the full original request, all cards, context/interfaces and criteria,
+then resolve findings and settle/retire that planning lane **before** transferring
+the frozen plan to a distinct integration/execution coordinator. Use useful bounded
+independent lanes, not maximum count. The coordinator checks/integrates all
+contributions and repairs the unified result itself—not through ROOT or original
+coders. After each material revision it reruns all original outcome/global checks
+and obtains a fresh independent exact-revision read-only audit. Continue until all
+original outcomes work together and the whole request is fulfilled, or report
+honest BLOCKED/INCOMPLETE within authorized bounds.
 Planner ROOT does not inspect/integrate code, delegate repairs or handle lifecycle
 work after accepted transfer. See [WORKFLOW.md](WORKFLOW.md) for the exact handoff,
 recipient bootstrap and missing-capability BLOCKED behavior. Noncoding requests
@@ -122,11 +128,15 @@ do not need artificial coding lanes/handoff.
 
 Ask for real lane IDs/worktrees, unified revision, complete outcome/audit evidence
 and CLOSED proof. Generic Codex subagents or hook presence prove none of these.
-Schema checks reject missing coverage, stale revisions and declared nonindependence,
+The initial review and final product audit are distinct; both are advisory, with
+reasoned owner resolutions rather than reviewer PASS vetoes. V2 typed schema
+checks reject missing linkage/coverage, stale revisions and declared nonindependence,
 but do not prove evidence truth or full compliance. The native Stop gate still
 requires CLOSED, not task success. Planner waits idle after transfer until CLOSED;
 there is no Stop bypass. No external `$CODEX_HOME/skills` installation is required:
-the hook supplies the configured portable skill's path explicitly.
+the hook supplies the configured portable skill's path explicitly. The
+[historical native acceptance test](REAL_WORKFLOW_TEST.md) is v1 evidence; v2
+initial-review/repair-loop checks are offline fixtures, not a new native E2E claim.
 
 ## Scope, installation, and native trust
 

@@ -2,38 +2,80 @@
 
 Accepted Codex `[harness]` submissions explicitly select
 [`skills/harness-outcome-workflow/SKILL.md`](../skills/harness-outcome-workflow/SKILL.md),
-version 1. No external skill installation or automatic model discovery is needed:
+version 2. No external skill installation or automatic model discovery is needed:
 the hook gives the configured skill's absolute path. The hook selects instructions
 and validates readiness; it does **not** execute this workflow or prove compliance.
 
-See the [real-provider acceptance report](REAL_WORKFLOW_TEST.md) for the completed
-Codex/Linux coding → integration → independent native audit → CLOSED test, its
-explicit manager permission approval and known continuation limitation. Other
-providers and unexercised paths are not implied by that result.
+The [historical real-provider report](REAL_WORKFLOW_TEST.md) records the completed
+**v1** Codex/Linux coding → integration → independent native audit → CLOSED test.
+It does **not** demonstrate the new v2 initial split review or a real repair
+iteration; v2 adds offline behavioral/repair fixtures and independent source
+review, not another provider-backed E2E. Other providers are not implied.
 
 ## Roles and completion
 
-1. **Planner ROOT** splits the original task once into bounded assignments, each
-   with exactly one concrete checkable outcome. It records original prompt,
-   constraints, all assignments and complete outcome ledger, including unified
-   integration criteria and authorized provider/model/options for every role.
-2. **Integration/execution coordinator** becomes the native manager through the
-   explicit handoff below. It launches the assignments, checks contributions,
-   integrates in a dedicated worktree, and checks every assigned outcome survives
-   integration. Planner ROOT does none of this and delegates no repairs.
-3. **Independent auditor** is a fresh read-only native worker, neither an author
-   nor integrator. It receives the complete original contract and exact integrated
-   revision and performs meaningful whole-result checks. It returns an audit
-   artifact through native RESULT/completion events, discovered by coordinator
-   `watch --until-actionable`, not a new relay.
-4. The coordinator evaluates findings, **makes repairs itself**, and requests a
-   fresh independent audit of material revisions. It owns acceptance, retirement,
-   manager events and shutdown. Auditors are advisory, never autonomous vetoes.
+1. **Planner ROOT** preserves the original prompt, constraints, context/interfaces
+   and full ledger. Each useful coding assignment has one concrete checkable goal,
+   explicit ownership/dependencies, deliverables and checks. Include overall
+   interaction/regression criteria and authorized provider/model/options for
+   **every** role, including the initial reviewer. Choose as many useful independent
+   lanes as warranted, not maximum count. One small lane is valid; genuinely
+   coupled outcomes may require sequencing rather than artificial parallelism.
+2. **Independent initial split reviewer** is a fresh read-only-product native lane
+   before implementation. It receives the whole original request, all proposed
+   cards, relevant context/interfaces and criteria. It evaluates coverage,
+   semantic independence, dependency DAG, shared-path ownership, one goal per
+   assignment, granularity/coordination cost and overall criteria. It reviews the
+   **plan**, not the finished product. See the skill's
+   [planning-review guide](../skills/harness-outcome-workflow/references/planning-review.md).
+3. **Planner resolves the review**, revising justified problems or explaining
+   declined advice with reasons. Record current-plan linkage and authentic normal
+   RESULT/evidence. Material changes require a review of the final exact plan;
+   do not attach an unrelated old review. Reviewer PASS is not a gate: owner
+   judgment resolves advice. Settle/retire the planning lane through native watch,
+   events and completion review **before handoff**; planner still has authority
+   for these planning-only actions. This avoids a transfer deadlock with active
+   reviewer work. A retired initial-review epoch may be followed by the normal
+   handoff epoch; do not fabricate freshness/preparation receipts.
+4. **Integration/execution coordinator** becomes the distinct native manager
+   through the explicit handoff below. It receives the immutable resolved plan,
+   original prompt, **all** cards/outcomes and whole-result criteria. It launches
+   bounded coding assignments, checks/integrates contributions into its dedicated
+   candidate worktree, and reruns every original outcome/global check together.
+   After accepted transfer planner is idle: no product checking, integration,
+   repairs, repair delegation, event management, acceptance or shutdown.
+5. **Independent final auditor** is a fresh read-only-product native worker,
+   neither author nor integrator, with no product-writing/resource lease. It
+   receives the full original contract, all cards, context/interfaces, exact
+   candidate revision, actual checks and known limitations. It independently
+   tests whether **all original outcomes work together and the overall task was
+   completed as desired**, not merely whether worker summaries sound plausible.
+   Return structured audit evidence through genuine native RESULT/events;
+   coordinator discovers it using native `watch --until-actionable`, not a relay.
+6. **Integrator ↔ fresh auditor:** the coordinator judges advisory findings and
+   makes justified repairs **itself**, never through ROOT or original coders. Any
+   material candidate change invalidates the previous audit. Commit the new exact
+   revision, rerun **all** original outcomes and overall criteria, then commission
+   a fresh independent native auditor. Preserve old findings/evidence as history,
+   not current approval. Continue until the unified result meets the entire
+   original request or authorized resources/capabilities prevent further progress.
 
-Finish only with honest exact-revision evidence covering all outcomes and global
-criteria, or report BLOCKED/INCOMPLETE when permissions, capabilities or authorized
-resources run out. Do not manufacture success or create an infinite retry loop.
-Always settle owned work, shut down and prove CLOSED; CLOSED is not task success.
+Auditors are advisory, never autonomous vetoes. The owner records reasoned
+resolutions rather than chasing reviewer PASS. Typed validation checks declared
+review linkage, observed identity comparisons, coverage and revision consistency;
+it cannot prove truth, read-only behavior or semantic success. Native lane
+acceptance records the assigned review was delivered, not that advice is binding.
+See the [contract/reference](../skills/harness-outcome-workflow/references/contract.md)
+for initial review, exact-revision audit and final-result records.
+
+Claim success only when **every original outcome and all overall criteria work
+together on the exact current target**, with independent evidence and no justified
+unresolved failure. Never drop/weaken/relabel requirements, accept a partial PASS,
+reuse stale audit evidence or call CLOSED task success. If permissions, ambiguity,
+missing capabilities, resource bounds or infrastructure block progress, report
+BLOCKED/INCOMPLETE honestly; no automatic provider retries or endless PASS chase.
+Always settle owned lanes/events, shut down and prove CLOSED even when incomplete.
+A missing review cannot hold cleanup hostage but must not be claimed completed.
 A noncoding marked question needs no artificial coding lanes or handoff.
 
 ## Explicit native manager handoff
@@ -44,7 +86,8 @@ the coordinator to use the same provider as prepared ROOT. It does not create a
 client or call a provider API. Starting another client may cost money and requires
 available authorized tooling; do not infer broader external permissions.
 
-The planner writes a valid contract (see the skill's
+After completing/resolving independent initial review and settling/retiring its
+normal native lane, the planner writes the valid final v2 contract (see the skill's
 [contract reference](../skills/harness-outcome-workflow/references/contract.md))
 and creates/identifies the actual distinct coordinator native conversation,
 observing its provider-native conversation/session ID through the provider
@@ -204,6 +247,11 @@ client, then submit the next `[harness]` task. New preparation creates genuine n
 records; the archive stays intact and the previous handoff never carries forward.
 
 ## Upgrade an existing installed harness safely
+
+V2 adds independently reviewed planning and integrator-owned full-check/fresh-audit
+repair cycles. Saved v1 records remain readable as **legacy** evidence; do not
+rewrite them into v2 review receipts or claim the historical native v1 test covers
+v2. Installing v2 source does not activate a runtime or run a new provider test.
 
 Freeze source/configuration during a live run. Before replacing installed code,
 settle all lanes and prove CLOSED. Changes to hashed source/hooks may invalidate

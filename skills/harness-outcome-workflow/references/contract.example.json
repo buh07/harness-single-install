@@ -1,5 +1,5 @@
 {
-  "schema": "harness-outcome-workflow/v1",
+  "schema": "harness-outcome-workflow/v2",
   "original_prompt": "Reject expired tokens with HTTP 401 without breaking valid-token requests.",
   "constraints": [
     "Keep the public API unchanged; do not push or publish."
@@ -83,6 +83,102 @@
     "provider_options": {
       "reasoning_effort": "high",
       "service_tier": "normal"
+    }
+  },
+  "repository_context": [
+    "The authentication handler already has expired-token and valid-token regression fixtures. This illustrative record is not evidence of a real repository or native run."
+  ],
+  "interfaces": [
+    "Preserve the existing HTTP handler and token-verification call signature; response status is the externally checked interface."
+  ],
+  "split_reviewer": {
+    "provider": "codex",
+    "model": "operator-selected-model",
+    "provider_options": {
+      "reasoning_effort": "high",
+      "service_tier": "normal"
+    }
+  },
+  "plan_review": {
+    "report": {
+      "schema": "harness-split-review/v1",
+      "plan_sha256": "c72e9b25cf525b5dedf0131451dddd275cb8311313e24e9ee568516ab88972f9",
+      "prepared_run_id": "example-prepared-run",
+      "root_session_id": "example-logical-root",
+      "reviewer_session_id": "example-observed-reviewer",
+      "read_only": true,
+      "dimensions": [
+        {
+          "id": "coverage",
+          "assessment": "Expired-token rejection has a concrete coding owner; valid-token behavior is explicitly preserved in unified checks.",
+          "evidence": [
+            "outcomes: expired-token, valid-token; integration criterion: unified-auth"
+          ]
+        },
+        {
+          "id": "semantic-independence",
+          "assessment": "One authentication behavior change is a useful bounded lane; no artificial parallel test-only fragment is needed.",
+          "evidence": [
+            "assignment: token-rejection"
+          ]
+        },
+        {
+          "id": "dependencies",
+          "assessment": "The sole coding lane has no predecessor; no cyclic or hidden interface dependency is proposed.",
+          "evidence": [
+            "token-rejection.dependencies=[]; existing HTTP interface retained"
+          ]
+        },
+        {
+          "id": "shared-ownership",
+          "assessment": "Only token-rejection writes handler and focused tests; coordinator owns its separate candidate.",
+          "evidence": [
+            "token-rejection.scope; no concurrent shared-path writers"
+          ]
+        },
+        {
+          "id": "single-goal",
+          "assessment": "The card has one checkable outcome: expired tokens return HTTP 401.",
+          "evidence": [
+            "token-rejection.goal; outcome expired-token"
+          ]
+        },
+        {
+          "id": "granularity-cost",
+          "assessment": "A second test-only lane would add context and integration cost without an independent product outcome.",
+          "evidence": [
+            "One small coding lane with handler change and its regression tests"
+          ]
+        },
+        {
+          "id": "global-criteria",
+          "assessment": "Both expired and valid requests are checked together at the final candidate revision.",
+          "evidence": [
+            "unified-auth.checks covers both original outcomes"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "id": "separate-tests",
+          "description": "Consider a separate lane for the expired-token regression test."
+        }
+      ]
+    },
+    "resolutions": [
+      {
+        "id": "separate-tests",
+        "decision": "declined",
+        "rationale": "Handler and regression implement one bounded behavior with overlapping context. A second lane adds coordination cost without an independent goal; retain the proportionate single lane."
+      }
+    ],
+    "native_review": {
+      "prepared_run_id": "example-prepared-run",
+      "root_session_id": "example-logical-root",
+      "epoch_id": "example-retired-review-epoch",
+      "lane_id": "example-plan-review",
+      "run_id": "example-worker-invocation",
+      "result_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
   }
 }

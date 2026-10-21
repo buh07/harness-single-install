@@ -63,7 +63,9 @@ class PromptOptInTests(unittest.TestCase):
         self.mocks()
         result = self.call()["hookSpecificOutput"]["additionalContext"]
         self.assertIn(str(self.harness / "skills/harness-outcome-workflow/SKILL.md"), result)
-        self.assertIn("planner ROOT only decomposes once", result)
+        self.assertIn("harness-outcome-workflow v2", result)
+        self.assertIn("independent product-read-only native split", result)
+        self.assertIn("Integrator repairs ITSELF", result)
         self.assertIn("For noncoding requests", result)
         self.assertIn("Instruction selection/readiness does not", result)
 

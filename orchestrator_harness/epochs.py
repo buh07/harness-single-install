@@ -275,6 +275,18 @@ def close_epoch(rt: Path, epoch_id: str) -> None:
                 if state.get("lane_mode") == "managed":
                     state["closing_queue_id"] = queue["queue_id"]
                 atomic_write_json(state_path, state)
+            if state.get("lane_mode") == "managed":
+                # Keep the settled native history before the next ordinary
+                # epoch replaces the fixed queue. This is an inert evidence
+                # snapshot, never a second queue or source of actionable work.
+                archive = epoch_dir(rt, epoch_id) / "CLOSED_MANAGER_QUEUE.json"
+                try:
+                    preserved = read_record(archive, MANAGER_QUEUE_SCHEMA)
+                except FileNotFoundError:
+                    atomic_write_json(archive, queue)
+                else:
+                    if preserved != queue:
+                        raise EpochError("closed manager queue evidence differs; preserve and reconcile")
             with RecordLock(marker_path):
                 if marker is not None:
                     marker_path.unlink()

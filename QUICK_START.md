@@ -38,8 +38,13 @@ Declare each exclusive resource as `{"id": "<name>", "exclusive": true}` in `res
 
 Accepted `[harness]` coding prompts explicitly load
 [the outcome workflow skill](skills/harness-outcome-workflow/SKILL.md). Planner
-ROOT decomposes once; a distinct execution coordinator owns checking, integration,
-repairs and cleanup, cycling with independent read-only whole-result auditing.
+ROOT drafts a proportionate split, obtains an independent native initial split
+review, resolves its findings, and settles/retires that lane before handoff. One
+useful coding lane is valid; do not maximize lane count. A distinct execution
+coordinator owns checking, integration, repairs and cleanup. After each material
+repair it reruns **all** original outcome/global checks and commissions a fresh
+independent exact-revision audit until the whole result works or resources require
+an honest BLOCKED/INCOMPLETE report.
 Read [WORKFLOW.md](docs/WORKFLOW.md) for contract/handoff and unmarked recipient
 bootstrap. No supported distinct native manager client means BLOCKED, not a
 planner fallback. Noncoding requests need no artificial coding lanes.
