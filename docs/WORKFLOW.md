@@ -1,169 +1,271 @@
-# Default outcome workflow and manager handoff
+# External gateway and default outcome workflow v3
 
-Accepted Codex `[harness]` submissions explicitly select
-[`skills/harness-outcome-workflow/SKILL.md`](../skills/harness-outcome-workflow/SKILL.md),
-version 2. No external skill installation or automatic model discovery is needed:
-the hook gives the configured skill's absolute path. The hook selects instructions
-and validates readiness; it does **not** execute this workflow or prove compliance.
+The outer conversation sits **completely outside** managed execution. It submits
+exact original request bytes and relays the final report. The distinct native
+execution/integration coordinator is prepared logical ROOT and manager **from
+intake**. Separate native planner, independent split reviewer, coding lanes and
+fresh whole-result auditors work under that coordinator, not under outer.
 
-The [historical real-provider report](REAL_WORKFLOW_TEST.md) records the completed
-**v1** Codex/Linux coding → integration → independent native audit → CLOSED test.
-It does **not** demonstrate the new v2 initial split review or a real repair
-iteration; v2 adds offline behavioral/repair fixtures and independent source
-review, not another provider-backed E2E. Other providers are not implied.
+Accepted Codex `[harness]` messages explicitly select
+[`harness-outcome-workflow`](../skills/harness-outcome-workflow/SKILL.md).
+The hook supplies the installed skill path; no external skill install is needed.
+After genuine readiness the native marker hook registers the exact original
+request and observed gateway as REGISTERED intake before any tool. This is narrow
+request provenance/nonmanager identity—not a provider launcher, new queue or
+sticky mode. Selection/registration does not execute the skill.
 
 ## Roles and completion
 
-1. **Planner ROOT** preserves the original prompt, constraints, context/interfaces
-   and full ledger. Each useful coding assignment has one concrete checkable goal,
-   explicit ownership/dependencies, deliverables and checks. Include overall
-   interaction/regression criteria and authorized provider/model/options for
-   **every** role, including the initial reviewer. Choose as many useful independent
-   lanes as warranted, not maximum count. One small lane is valid; genuinely
-   coupled outcomes may require sequencing rather than artificial parallelism.
-2. **Independent initial split reviewer** is a fresh read-only-product native lane
-   before implementation. It receives the whole original request, all proposed
-   cards, relevant context/interfaces and criteria. It evaluates coverage,
-   semantic independence, dependency DAG, shared-path ownership, one goal per
-   assignment, granularity/coordination cost and overall criteria. It reviews the
-   **plan**, not the finished product. See the skill's
-   [planning-review guide](../skills/harness-outcome-workflow/references/planning-review.md).
-3. **Planner resolves the review**, revising justified problems or explaining
-   declined advice with reasons. Record current-plan linkage and authentic normal
-   RESULT/evidence. Material changes require a review of the final exact plan;
-   do not attach an unrelated old review. Reviewer PASS is not a gate: owner
-   judgment resolves advice. Settle/retire the planning lane through native watch,
-   events and completion review **before handoff**; planner still has authority
-   for these planning-only actions. This avoids a transfer deadlock with active
-   reviewer work. A retired initial-review epoch may be followed by the normal
-   handoff epoch; do not fabricate freshness/preparation receipts.
-4. **Integration/execution coordinator** becomes the distinct native manager
-   through the explicit handoff below. It receives the immutable resolved plan,
-   original prompt, **all** cards/outcomes and whole-result criteria. It launches
-   bounded coding assignments, checks/integrates contributions into its dedicated
-   candidate worktree, and reruns every original outcome/global check together.
-   After accepted transfer planner is idle: no product checking, integration,
-   repairs, repair delegation, event management, acceptance or shutdown.
-5. **Independent final auditor** is a fresh read-only-product native worker,
-   neither author nor integrator, with no product-writing/resource lease. It
-   receives the full original contract, all cards, context/interfaces, exact
-   candidate revision, actual checks and known limitations. It independently
-   tests whether **all original outcomes work together and the overall task was
-   completed as desired**, not merely whether worker summaries sound plausible.
-   Return structured audit evidence through genuine native RESULT/events;
-   coordinator discovers it using native `watch --until-actionable`, not a relay.
-6. **Integrator ↔ fresh auditor:** the coordinator judges advisory findings and
-   makes justified repairs **itself**, never through ROOT or original coders. Any
-   material candidate change invalidates the previous audit. Commit the new exact
-   revision, rerun **all** original outcomes and overall criteria, then commission
-   a fresh independent native auditor. Preserve old findings/evidence as history,
-   not current approval. Continue until the unified result meets the entire
-   original request or authorized resources/capabilities prevent further progress.
+1. **Outer gateway:** submit the whole original request unchanged (including the
+   marker, Unicode, line endings and trailing whitespace), initiate only the
+   authorized thin native dispatch, and relay the final response. No decomposition,
+   technical checks, events/watch, repairs, acceptance, retirement or shutdown.
+2. **Native coordinator:** accept the immutable intake before managing work. It
+   commissions a separate read-only-product native **planner**, giving the whole
+   request, constraints, context and authorized preferences. Planner's single
+   bounded deliverable is the original-outcome ledger, all concrete coding cards
+   and global criteria. Manager is not a planner disguised by a role label.
+3. **Independent split reviewer:** a distinct fresh read-only-product native lane
+   receives the entire proposed ledger, **all** cards, original request, context/
+   interfaces and preferences. Review coverage, semantic independence, DAG/shared
+   ownership, one concrete checkable goal per card, coordination cost and global
+   criteria. One small coding lane is valid. See [planning review](../skills/harness-outcome-workflow/references/planning-review.md).
+4. **Planner resolves/revises** justified findings or explains declined advice;
+   coordinator owns native communications and lifecycle. Material changes require
+   review of the exact final plan. Freeze actual current planner/reviewer
+   provenance and all original outcomes—never synthetic receipts or stale review.
+   Both lanes use ordinary RESULT/events, native blocking watch, settlement and
+   retirement. Reviewer advice is not a PASS veto.
+5. **Coordinator launches coding lanes**, each with one concrete task and one
+   checkable outcome, complete bounded card and explicit authorized preferences.
+   Keep one writer per shared path; sequence dependencies. It checks/integrates
+   contributions in its separate candidate and checks **all original outcomes and
+   global criteria together**, including interactions and preserved behavior.
+6. **Fresh independent whole-result auditor:** receives the original request,
+   frozen entire ledger, every card, context/interfaces, exact candidate revision,
+   actual checks and limitations. It independently inspects/tests the unified
+   target, not only isolated worker summaries. Use genuine native RESULT/watch.
+7. **Coordinator ↔ fresh auditor:** coordinator judges advisory findings and makes
+   justified repairs **itself**, never through outer, planner or original coders.
+   Every material change needs a new exact commit, rerun of **all** original
+   outcome/global checks and a fresh independent auditor. Keep failed evidence.
+   Continue within authorized resources until the whole request works, or report
+   honest BLOCKED/INCOMPLETE, not weakened outcomes or a partial PASS.
 
-Auditors are advisory, never autonomous vetoes. The owner records reasoned
-resolutions rather than chasing reviewer PASS. Typed validation checks declared
-review linkage, observed identity comparisons, coverage and revision consistency;
-it cannot prove truth, read-only behavior or semantic success. Native lane
-acceptance records the assigned review was delivered, not that advice is binding.
-See the [contract/reference](../skills/harness-outcome-workflow/references/contract.md)
-for initial review, exact-revision audit and final-result records.
+Coordinator alone handles native events, acceptance, retirement and shutdown.
+Auditors are advisory, never vetoes; reasoned rejection of incorrect findings is
+allowed. Missing required review means incomplete but cannot hold cleanup hostage.
+Typed validation checks linkage/identity/coverage/revision consistency, not truth
+or semantic completion. CLOSED proves cleanup, not success. Noncoding selected
+requests still go to coordinator without artificial coding contracts/lanes or
+outer fallback; it fulfills them and owns shutdown. The detailed planning/coding/
+audit stages above describe coding work.
 
-Claim success only when **every original outcome and all overall criteria work
-together on the exact current target**, with independent evidence and no justified
-unresolved failure. Never drop/weaken/relabel requirements, accept a partial PASS,
-reuse stale audit evidence or call CLOSED task success. If permissions, ambiguity,
-missing capabilities, resource bounds or infrastructure block progress, report
-BLOCKED/INCOMPLETE honestly; no automatic provider retries or endless PASS chase.
-Always settle owned lanes/events, shut down and prove CLOSED even when incomplete.
-A missing review cannot hold cleanup hostage but must not be claimed completed.
-A noncoding marked question needs no artificial coding lanes or handoff.
+## Native intake and startup
 
-## Explicit native manager handoff
+Prerequisites: a full configured installation and native trusted/loaded hooks
+([INSTALL.md](../INSTALL.md)), a fresh run, authorized provider access/preferences,
+and a supported way to **create, observe and resume a distinct genuine native
+coordinator conversation**. This product deliberately adds no provider launcher,
+scheduler, relay or supervisor. A hook cannot create that conversation. If native
+capability or permission is absent, report BLOCKED; do not promise automatic use.
 
-This is authority transfer between **distinct real provider-native manager
-conversations**, not relabeling an ordinary coding lane. Initial support requires
-the coordinator to use the same provider as prepared ROOT. It does not create a
-client or call a provider API. Starting another client may cost money and requires
-available authorized tooling; do not infer broader external permissions.
+### 1. Seed a genuine coordinator before OPEN
 
-After completing/resolving independent initial review and settling/retiring its
-normal native lane, the planner writes the valid final v2 contract (see the skill's
-[contract reference](../skills/harness-outcome-workflow/references/contract.md))
-and creates/identifies the actual distinct coordinator native conversation,
-observing its provider-native conversation/session ID through the provider
-client's supported metadata. Keep that conversation idle until the offer is
-ready, or resume that exact ID later; do not create a different second client
-conversation. Provider-native metadata discovery is not a product tool operation.
-A made-up ID, ordinary collaboration subagent ID or lane session is not sufficient.
-If no supported way exists to create/observe that conversation, stop honestly as
-BLOCKED rather than making planner ROOT execute the task.
+The Codex CLI shape below is an executable operator procedure for clients with
+`exec --json` and `exec resume`; inspect your installed native `--help` first.
+Choose existing absolute `HARNESS_DIR`, `WORKSPACE`, `CODEX_HOME`, `PYTHON`,
+`CODEX_BIN` and an unused private persistent `EVIDENCE_DIR`. Export `CODEX_HOME`
+for both native calls (as in INSTALL); use no copied authentication. Set explicit authorized
+`CODEX_MODEL`, `CODEX_REASONING` and `CODEX_SERVICE_TIER`. Shell snippets are POSIX,
+not Windows quoting recipes. Do not silently enable danger-full-access or bypass
+hooks, sandbox, approval, trust or health gates. Native/model calls may cost money.
 
-For the tested Codex `exec` seed/resume method, finish the tool-free recipient
-seed and record its genuine native ID **before fresh preparation opens the
-managed runtime**. Then prepare and start the marked planner. Otherwise ROOT Stop
-obligations can hold the seed client open; never concurrently resume that running
-client. Native app-server idle-thread creation is a different method and was not
-end-to-end tested here. See the [tested startup order](REAL_WORKFLOW_TEST.md#reproducing-the-workflow).
-
-From the harness source root, in the planner's native session:
+Before preparation opens the runtime, with any previous run proved CLOSED:
 
 ```sh
-python -B -m orchestrator_harness.operator_launch --json manager handoff-offer \
-  --to-native-session-id <actual-distinct-native-session> --contract <contract.json>
+mkdir -m 700 "$EVIDENCE_DIR"
+cd "$WORKSPACE"
+"$CODEX_BIN" exec --cd "$WORKSPACE" --json -m "$CODEX_MODEL" \
+  -c "model_reasoning_effort=\"$CODEX_REASONING\"" \
+  -c "service_tier=\"$CODEX_SERVICE_TIER\"" \
+  'Do not use tools. This is an idle coordinator seed; reply READY only.' \
+  > "$EVIDENCE_DIR/coordinator-seed.jsonl"
 ```
 
-Keep the returned `offer_id`, `contract_sha256` and evidence. The offer snapshots
-the validated contract. Planner still owns the run until acceptance; an offer
-alone never permits abandonment or concurrent managers.
+Wait for a successful **client exit**, then read the actual native `thread.started`
+`thread_id` in that JSONL and record it as `COORDINATOR_NATIVE_ID`. Never invent an
+ID, use a collaboration-agent ID, resume `--last`, or concurrently resume the still
+running seed. Preserve native sessions/logs; no auth copy or new native home is
+required by this procedure. Idle-thread creation via another native API is valid
+only if actually supported/authorized; it is not automatically supplied here.
 
-Use that exact recipient conversation at the **same configured manager workspace**, with native
-hooks loaded/trusted and the same prepared harness context. For Codex, send an
-**unmarked** bootstrap instruction containing the exact acceptance command,
-offer/hash and harness path. Do not prefix this bootstrap with `[harness]`: it is
-not yet the owner. Its **first tool operation must accept**; reading files with a
-tool before acceptance can correctly fail the native ownership check.
+### 2. Prepare that coordinator, not outer
 
-In the coordinator's actual native environment, with its observed identity:
+From the harness installation, create genuine fresh preparation. Its initial
+native binding may remain unset; the immutable intake designates the genuine
+seeded coordinator. Actual native first-tool acceptance performs the supported
+one-time bind to that observed session—not the gateway.
 
 ```sh
-python -B -m orchestrator_harness.operator_launch --json manager handoff-accept \
-  --offer-id <returned-offer-id> --contract-sha256 <returned-contract-sha256>
+cd "$HARNESS_DIR"
+"$PYTHON" -B scripts/prepare_root_launch.py \
+  --harness-dir "$HARNESS_DIR" --workspace "$WORKSPACE" \
+  --run-id "$HARNESS_RUN_ID" --provider codex
 ```
 
-Do not forge identity environment variables. After successful acceptance, load
-this workflow skill and immutable contract evidence. Acceptance transfers native
-manager authority; it does not rewrite original preparation receipts or create a
-second runtime. The bootstrap's OFF selection applies to new unmarked tasks,
-not continuation of the previously marked immutable contract. After genuine
-acceptance, the coordinator executes that entire contract, including **initial
-assignment launches even when no workers existed at transfer**, integration,
-checks, repairs, independent audits and shutdown. It is not limited to existing
-workers or cleanup. An offer or a prompt claiming acceptance grants no authority;
-all native ownership, readiness and permission checks still apply. The unmarked
-hook path remains read-only and never automatically sets up, prepares or reopens
-a runtime. The planner remains idle until coordinator proves CLOSED;
-there is no early Stop exemption. Only the coordinator consumes native manager
-work or performs lifecycle actions after transfer. Never add a custom supervisor,
-retry controller, watcher agent, transcript reader or event relay.
+Require successful readiness. Never set `CODEX_THREAD_ID`/other identity variables
+to impersonate this target, run the ROOT usage collector on the gateway, replace
+preparation receipts, or change a provider binding. The gateway is not the prepared
+ROOT. Keep one control host/runtime and frozen source/configuration.
 
-## Interrupted handoff and recovery
+### 3. Submit unchanged raw text from actual gateway
 
-Before acceptance, planner still owns cleanup: if no authorized recipient can
-accept, preserve the offer/contract and shut down rather than abandon OPEN.
-After ACTIVE transfer, resume the **exact coordinator native conversation** if
-its client exits. Planner must not spoof its identity or take ownership back.
-If that conversation cannot be resumed, preserve native records and report the
-blocker for explicit operator recovery; do not invent a supervisor or bypass
-native ownership. Original preparation receipts remain historical authority.
+Start/resume the separate outer Codex at the exact configured manager root with
+native hooks loaded/trusted. Submit `[harness]` on the exact first line and a
+nonempty request. After readiness the authentic native prompt hook records exact
+original bytes/hash and gateway identity in REGISTERED intake, before even a
+skill-read tool can be mistaken for manager activity. The selected gateway writes
+the **entire native submitted text**
+to a private UTF-8 file without trimming or newline conversion. Preserve marker
+and trailing whitespace; if a reliable exact copy is unavailable, stop rather
+than silently paraphrase. From the actual observed gateway environment:
+
+```sh
+cd "$HARNESS_DIR"
+"$PYTHON" -B -m orchestrator_harness.operator_launch --json manager intake-submit \
+  --to-native-session-id "$COORDINATOR_NATIVE_ID" --request-file "$REQUEST_FILE" \
+  --request-sha256 "$REQUEST_SHA256"
+```
+
+Use `REQUEST_SHA256` supplied by the native prompt hook for that original message,
+not a replacement hash computed from a possibly altered copy. Submission rejects
+a copied file whose exact bytes differ from that native-message hash. Keep returned
+intake ID, request SHA256 and evidence paths. Submission advances REGISTERED to
+PENDING with the designated coordinator—**not accepted ownership or task completion**. It neither grants gateway manager
+access nor rewrites ROOT/preparation records. The immutable request hash covers
+the exact decoded UTF-8 bytes, not a normalized task summary. The intake stores
+request data/provenance, not a second actionable manager queue. A different new
+marked request cannot overwrite this intake; independent tasks require fresh
+preparation after owned CLOSED cleanup. Unmarked prompts create no new intake.
+
+### 4. Resume the exact coordinator; accept as first tool
+
+Use the native client directly, only when authorized. In the same configured
+workspace/native home, resume the actual seed ID with an **unmarked** bootstrap:
+
+```sh
+cd "$WORKSPACE"
+"$CODEX_BIN" exec resume "$COORDINATOR_NATIVE_ID" --json \
+  --output-last-message "$EVIDENCE_DIR/coordinator-final.txt" \
+  "Your first tool operation must run: cd '$HARNESS_DIR' && '$PYTHON' -B -m orchestrator_harness.operator_launch --json manager intake-accept --intake-id '$INTAKE_ID' --request-sha256 '$REQUEST_SHA256'. After successful acceptance load '$HARNESS_DIR/skills/harness-outcome-workflow/SKILL.md' and execute the entire immutable original request. You own planner/review/coding/audit and shutdown, even if the task is blocked. Do not read files or run another tool before acceptance." \
+  > "$EVIDENCE_DIR/coordinator-execution.jsonl"
+```
+
+The fragment assumes ordinary paths without single quotes; use a native argument
+API or correct shell quoting otherwise. Do not wrap this in a custom launcher or
+retry controller. Native permissions and provider options remain the operator's
+explicit choices; the seed grants no additional inherited authorization.
+An unmarked bootstrap continues the submitted immutable request after actual
+acceptance; it authorizes no unrelated new unmarked task.
+
+Actual acceptance validates native identity, designated target, prepared scope,
+request hash and readiness. If native ROOT is unbound it uses the existing supported
+one-time bind API with the **actual observed** coordinator identity, then publishes
+accepted ownership. A crash after binding leaves PENDING (no manager authority);
+only the exact designated coordinator may retry acceptance. Existing receipts are
+not rewritten or fabricated. Only confirmed ACTIVE ownership permits manager work.
+The exact registered gateway can finish/yield without consuming manager events,
+writing manager delivery/liveness receipts or running shutdown. This says
+**accepted, not completed**. Pending, unknown, stale, corrupt or inconsistent
+ownership is not a Stop bypass. Actual manager OPEN Stop still requires CLOSED.
+
+### 5. Freeze the separate native plan
+
+Coordinator commissions and settles/retires actual planner and split-review lanes,
+then validates/freezes their resolved complete v3 contract:
+
+```sh
+cd "$HARNESS_DIR"
+"$PYTHON" -B -m orchestrator_harness.operator_launch --json manager plan-freeze \
+  --intake-id "$INTAKE_ID" --contract "$CONTRACT_FILE"
+```
+
+See [record reference](../skills/harness-outcome-workflow/references/contract.md)
+for original-byte linkage, plan/review hashes and real native evidence. Generic
+subagents or synthetic JSON examples cannot substitute for native provenance.
+After freeze coordinator executes all cards and owns the full repair/audit loop.
+
+## Failure, final relay and recovery
+
+Before dispatch, absent capability means BLOCKED, not outer execution. After
+PENDING submission, dispatch failure is **not** successful ownership. Resume the
+**exact designated authentic coordinator** to accept and perform owned shutdown,
+reporting the task BLOCKED if necessary. Gateway never gets generic manager
+commands or lifecycle fallback.
+
+If that native conversation cannot resume, an **independent actual operator
+terminal** may abandon a REGISTERED or PENDING never-accepted, never-started
+intake and clean up:
+
+```sh
+cd "$HARNESS_DIR"
+"$PYTHON" -B -m orchestrator_harness.operator_launch --json manager intake-abandon \
+  --intake-id "$INTAKE_ID" --request-sha256 "$REQUEST_SHA256"
+```
+
+This is not an outer/gateway tool operation. Use a genuine terminal with no
+provider-native, logical ROOT or worker identity environment; do not strip identity
+inside an agent shell to impersonate an operator. The command requires exact
+REGISTERED/PENDING intake/hash/scope, no accepted owner, no current epoch or admitted lanes/
+events/work, serializes against acceptance and invokes normal shutdown. ABANDONED
+is terminal evidence, prevents late acceptance and is **not** successful execution.
+Verify its CLOSED result; unknown work/ownership fails closed. If refused, preserve
+records and diagnose explicit operator recovery—never erase intake/receipts or
+invent identity. This is a narrow prelaunch failure cleanup, not authority takeover
+of active/coordinator-owned work. Prepared services/monitor can remain outstanding
+when recovery is unavailable; report that honestly rather than claiming cleanup.
+
+After acceptance, only actual coordinator owns work and cleanup. Resume that
+same conversation if interrupted. It settles/retire all lanes/events, runs native
+`harness shutdown`, verifies CLOSED and emits final response with immutable
+contract/intake linkage, exact revision, every original outcome/global check,
+current independent audit/resolutions, limitations and cleanup evidence. Outer
+relays that final response unchanged, not a second technical audit. Native final
+text is in `coordinator-final.txt` from the native `--output-last-message` flag
+(or genuine native client/session output when that flag is unavailable). Outer
+reads/relays only that final response, not internal transcripts or worker events.
+For read-only intake ownership status, actual gateway may run:
+
+```sh
+cd "$HARNESS_DIR"
+"$PYTHON" -B -m orchestrator_harness.operator_launch --json manager intake-status \
+  --intake-id "$INTAKE_ID"
+```
+
+Status/empty queue/client exit alone proves neither task success nor CLOSED. No
+transcript watcher, polling relay, background AI or second queue is introduced.
+
+## Legacy history and evidence limits
+
+Saved v1/v2 workflow/ownership records remain readable where supported. Their
+planner-as-ROOT explicit `manager handoff-offer`/`handoff-accept` lifecycle is
+**legacy**, not the default v3 external-gateway route. Do not reinterpret those
+records as coordinator-from-intake proof. The [real-provider report](REAL_WORKFLOW_TEST.md)
+is unchanged **v1 Codex/Linux** history, not a test of v2 split review or v3
+external gateway. V2 offline reviewed-plan/repair fixtures and v3 offline role-flow
+fixtures are labeled test doubles, not real model-backed provider E2E. Claude/Qwen
+have native harness adapters but no Codex `[harness]` selector; their new topology
+must not be claimed provider-tested without actual evidence.
 
 ## Fresh run after a handed-off task
 
-An OFFERED/ACTIVE ownership record belongs to exactly one prepared workflow epoch.
-Handoff initializes that native epoch before coding bootstrap. Retirement of the
-last contribution keeps it open for auditing/repairs; native shutdown closes it. Do not
-use the legacy terminal `harness setup` reopening recipe for the next independent
-workflow after a handoff. The actual execution coordinator must first complete
-native shutdown and prove CLOSED. Stop **both** planner and coordinator clients
+The heading retains its historical link; it applies to v3 intake-owned runs too.
+A v3 intake/accepted owner belongs to exactly one prepared run. The same owner
+retains its epoch across planner/reviewer/coding/audit retirement gaps; explicit
+native shutdown closes it. Do not use legacy same-run reopening for a new task.
+The actual coordinator must first complete shutdown and prove CLOSED. Stop gateway,
+planner/reviewer and coordinator clients
 and ensure no other operator/client uses this runtime during archival.
 
 Before moving runtime records, inspect `git -C "$PRODUCT_WORKSPACE" worktree list
@@ -241,28 +343,23 @@ cd "$HARNESS_DIR"
   --run-id "$HARNESS_RUN_ID" --provider codex
 ```
 
-Use the configured provider rather than `codex` for an explicitly selected other
-provider. Stop and diagnose any failure. Restart the appropriate native planner
-client, then submit the next `[harness]` task. New preparation creates genuine new
-records; the archive stays intact and the previous handoff never carries forward.
+Seed/observe the next genuine coordinator before preparation as described above.
+Use the configured provider for explicitly selected other providers. Stop and
+diagnose failures. Start the external gateway and submit the next marked task.
+The archive stays intact; previous intake/handoff never grants a new run authority.
 
 ## Upgrade an existing installed harness safely
 
-V2 adds independently reviewed planning and integrator-owned full-check/fresh-audit
-repair cycles. Saved v1 records remain readable as **legacy** evidence; do not
-rewrite them into v2 review receipts or claim the historical native v1 test covers
-v2. Installing v2 source does not activate a runtime or run a new provider test.
+V3 moves outer wholly outside execution and introduces direct native intake with
+separate planner/reviewer provenance. Preserve saved v1/v2 records and historical
+reports unchanged; do not upgrade old evidence by relabeling. Installing source
+never activates a runtime or performs a provider test.
 
-Freeze source/configuration during a live run. Before replacing installed code,
-settle all lanes and prove CLOSED. Changes to hashed source/hooks may invalidate
-existing prelaunch receipts; a previously valid receipt is not proof the new
-source is prepared. Do not overwrite, fabricate or silently delete receipts, and
-do not repeat same-run reopening after a hash-mismatch diagnostic.
-
-Diagnose the mismatch, preserve/archive the prior run's records on the operator's
-configured storage, and follow native **fresh preparation** with a new run and
-fresh runtime records only after confirming the old run is closed. Keep archives
-and native sessions/logs intact. This upgrade does not automatically set up,
-repair or reopen production. Revisit native hook trust if changed contents require
-it. A source install/test pass alone does not prove a real model-backed handoff,
-coding lane or completed repair/audit cycle.
+Freeze source/configuration during live work. Before replacing installed code,
+actual owner settles all lanes/events and proves CLOSED. Preserve local config,
+patches, installation notes, native sessions/logs and prior receipts. Changed
+hashed source/hooks can invalidate old prelaunch evidence. Diagnose, archive the
+settled prior run and perform genuine **fresh** preparation with new run and
+observed new coordinator identity. Never overwrite/delete/fabricate receipts or
+blindly repeat same-run reopening after a hash mismatch. Revisit native hook trust
+if required. Source install/unit tests do not prove a real v3 model-backed run.

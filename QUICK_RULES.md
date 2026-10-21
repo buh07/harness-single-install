@@ -2,16 +2,18 @@
 
 ## Authority
 
-1. One native manager owns execution authority at a time. The default
-   [outcome workflow](skills/harness-outcome-workflow/SKILL.md) has planner ROOT
-   resolve an independent initial split review, settle/retire its planning lane,
-   then explicitly hand the frozen complete plan to a distinct integration/execution
-   coordinator. Coding lanes must be useful independent bounded goals, not maximum count. After acceptance, the coordinator owns launches, checking, integration,
-   repairs, acceptance, retirement and shutdown; planner ROOT remains idle until CLOSED.
-   The coordinator repairs itself, reruns every original outcome/global check and
-   gets a fresh independent audit of each material new revision. All outcomes must
-   work together; incomplete results still require cleanup, not a manufactured PASS.
-   See [handoff and recipient bootstrap](docs/WORKFLOW.md).
+1. In default [v3 outcome workflow](skills/harness-outcome-workflow/SKILL.md), outer
+   only submits the unchanged original request and relays the final response.
+   It is never planner, prepared ROOT, manager, technical checker, repair router,
+   watcher or cleanup owner. A distinct genuine native coordinator owns management
+   from intake; it commissions a separate planner and independent split reviewer,
+   then bounded coding lanes. Planner creates/revises the split, one concrete task
+   and checkable goal per useful coding lane. Coordinator freezes real planning
+   provenance, checks/integrates all contributions and repairs itself, reruns all
+   original outcome/global checks and gets fresh independent exact-revision audits.
+   All outcomes must work together; bounded incomplete work still requires cleanup.
+   Outer yields only after confirmed scoped acceptance; actual manager OPEN Stop
+   still needs CLOSED. See [native startup/intake](docs/WORKFLOW.md).
 2. One coding worker runs in each active branch/worktree lane.
 3. A merge worker integrates only the branches assigned by the manager.
 4. The native observer reports facts and delivers durable events; it does not schedule or decide.
@@ -67,12 +69,12 @@
   preparation and it cannot be disabled by missing local policy; other ROOT providers are selected
   explicitly and the Codex gate is never bypassed. Manual `harness setup` is for plain/manual
   integration and unchanged legacy reopening only: no offered manager handoff and no changed
-  prepared source/configuration. After an outcome-workflow handoff or source upgrade, the actual
+  prepared source/configuration. After a v3 intake, legacy handoff or source upgrade, the actual
   coordinator owns shutdown and the next task needs guarded archival plus genuine fresh-run
   preparation, not terminal same-run reopening. Follow
   [WORKFLOW.md](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task).
   Never delete or fabricate runtime records or receipts.
-- Managed ROOT Stop requires runtime CLOSED, not just an empty queue. CLOSED proves cleanup,
+- Actual managed ROOT Stop requires runtime CLOSED, not just an empty queue. CLOSED proves cleanup,
   not task success. Require exact-revision independent audit of every assigned and cross-cutting
   outcome. Instruction selection/schema checks do not prove task completion.
 

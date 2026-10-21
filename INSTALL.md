@@ -5,8 +5,11 @@ repairs and an explicit Codex `[harness]` prompt selector. Clone this repository
 for each new installation; do not copy a prepared installation or its receipts.
 
 **Quick mental model:** installation adds native hooks; preparation opens the
-runtime; the exact first line `[harness]` opts one new Codex message into the
-harness workflow. It is not automatic startup. Ordinary messages are OFF.
+runtime for a genuinely separate native coordinator; the exact first line
+`[harness]` makes the outer conversation only an unchanged-request submission /
+final-response gateway. A separate planner, independent reviewer, coding lanes
+and integration/audit loop run under the coordinator, not outer. This is not an
+automatic provider launcher. Ordinary new messages are OFF.
 
 Read [QUICK_RULES.md](QUICK_RULES.md) before live work. The detailed lane workflow
 is in [QUICK_START.md](QUICK_START.md), and selector semantics are in
@@ -94,8 +97,8 @@ this checkout before preparation. If it already exists, preserve it and merge
 only the missing installation notes; do not overwrite it. Record your chosen
 absolute harness/product/manager paths, source commit, Python and provider CLI,
 active Codex home, provider, and the run ID you will use in step 4. Link back to
-this `INSTALL.md` and include the same-run-ID CLOSED reopening instructions from
-step 7. For example, fill in this local note (never commit the filled values):
+this `INSTALL.md` and the fresh native startup/intake procedure in
+`docs/WORKFLOW.md`; do not use legacy same-run reopening for v3. For example, fill in this local note (never commit the filled values):
 
 ```markdown
 # Local installation
@@ -254,199 +257,134 @@ For a manual merge or Windows setup, use the template in
 with absolute interpreter/script/workspace paths and appropriate native shell
 quoting. Do not use POSIX `shlex` quoting for Windows.
 
-## 4. Prepare before starting ROOT
+## 4. Create the genuine coordinator before preparation
 
-For a **fresh** managed Codex workspace, do not run `harness setup` separately:
-preparation performs native setup once internally.
+Follow the [executable native startup/intake procedure](docs/WORKFLOW.md#native-intake-and-startup)
+for supported native CLI seeding, actual observed conversation ID, genuine
+preparation, raw submission and exact-session resume. Keep all operator paths,
+preferences and evidence in ignored local notes/private storage. A hook cannot
+create a native coordinator, and this product adds no launcher or supervisor.
 
-```sh
-cd "$HARNESS_DIR"
-export HARNESS_RUN_ID='<your-new-recorded-run-id>'
-"$PYTHON" -B scripts/prepare_root_launch.py \
-  --harness-dir "$HARNESS_DIR" --workspace "$WORKSPACE" \
-  --run-id "$HARNESS_RUN_ID" --provider codex
-```
+Finish a tool-free coordinator seed **before OPEN** and observe its genuine
+native ID. Do not concurrently resume a running seed, use `--last`, invent IDs,
+set identity variables to impersonate another thread, or run the prepared ROOT
+collector for outer. The coordinator, not gateway/planner, is genuine logical ROOT.
 
-Require successful preparation. It validates configuration, installs/merges
-native ROOT payloads and core hooks, starts the monitor, and records the genuine
-run/session receipt under the manager workspace's `.agent-workspace/`. It starts
-**no coding lane or model call**. Keep the run ID, paths, and receipt unchanged.
+Preparation performs native setup once internally, installs/merges core hooks,
+starts native monitor and records genuine run readiness. It starts no provider
+or coding lane. Select provider explicitly; Codex is default, `claude-code` and
+`qwen-code` have native adapters but **not** the Codex `[harness]` selector. Native
+hook trust, readiness, provider health/sandbox and permissions remain required.
+Never switch prepared provider bindings to bypass a failed gate.
 
-If this workspace already contains a harness runtime, preparation attempt, or
-receipt, **stop and diagnose its ownership/state first**; it is not a fresh
-installation. Never delete, copy, fabricate, or reset authority records to make
-setup pass. An interrupted preparation or a prepared CLOSED runtime has a
-separate documented recovery/reopen path. Do not overwrite existing shared hook
-or provider configuration. The core setup structurally merges its registrations
-and preserves unrelated native files.
+If prior runtime/attempt/receipts exist, stop and diagnose ownership/state; do not
+run a fresh recipe over them. Preserve records and follow the guarded archive
+procedure only after the actual owner proves CLOSED. Changed source/hook hashes
+need diagnosed fresh preparation, not copied receipts or repeated same-run setup.
 
-Provider selection is explicit: `--provider claude-code` or `--provider qwen-code`
-prepares that provider instead. Use its native CLI and provider instructions from
-[QUICK_START.md](QUICK_START.md). Do not install/use the Codex selector for those
-ROOTs or change an existing receipt's provider. Their core harness integration
-remains available, but this `[harness]` feature does **not** add Claude/Qwen prompt
-selection. The Windows Codex health gate is never bypassed by a provider change.
+## 5. Start the external gateway; review native trust
 
-## 5. Start or resume native Codex, then review trust
+Use the configured native home/executable and exact manager workspace. Native
+`/hooks` must show loaded/enabled/trusted UserPromptSubmit and core hooks. Restart/
+resume after installation; files on disk do not prove client discovery/trust.
+Do not weaken permissions, manufacture trust hashes or change shared config to
+make a test pass. Preserve existing sessions/logs and unrelated hook groups.
 
-Start at the **exact configured manager workspace root**, using the same active
-Codex home and a deliberately chosen native executable:
+The separate gateway is **not** prepared ROOT. It must not use a ROOT usage
+collector or claim logical ROOT identity. The [startup procedure](docs/WORKFLOW.md#native-intake-and-startup)
+explains direct native coordinator dispatch and first-tool acceptance. These are
+real prerequisites, not hidden automatic calls performed by `[harness]`.
 
-```sh
-cd "$WORKSPACE"
-"$CODEX_BIN" --no-daemon
-# Or, resume a deliberately selected existing native session:
-# "$CODEX_BIN" resume --no-daemon <your-session-id>
-```
-
-These startup commands describe the tested Codex 0.163.0 CLI; if your installed
-client does not support them or the hook contract, stop and check its native
-help/documentation. Do not silently select a different executable from PATH or
-resume `--last` when diagnostic sessions might have changed which one is last.
-Existing native sessions/logs are preserved; this distribution does not import
-archived sessions as new prepared authority.
-
-Use native **`/hooks`** to inspect/enable/trust the new UserPromptSubmit command
-and the core PostToolUse/Stop hooks. Check the exact interpreter, installed
-script, scope arguments, and source. Normal native review/trust is required;
-never manufacture trusted hashes, disable trust checks, or treat a file on disk
-as proof an existing client loaded it. Restart/resume after hook installation or
-configuration changes. Editing the home registration does not make an already
-running client reload it.
-
-Preparation opens a managed runtime. Do not ask an unrelated preliminary
-question and expect it to remain open: **any final response requires CLOSED**
-under the existing Stop hook. Once loaded/trusted, submit the actual marked task
-directly. If preparation or trust/loading fails, preserve the diagnostic and use
-native `harness shutdown` as appropriate; do not leave an idle OPEN runtime.
-
-## 6. Submit a harness task
-
-The actual message must start with this exact, case-sensitive first line, not a
-quote, code fence, leading blank line, or an inline prefix:
+## 6. Submit the exact marked request
 
 ```text
 [harness]
-Implement my feature and run its focused tests using native harness lanes.
+Implement my feature and run its focused tests.
 ```
 
-Put a nonempty task below the marker. The hook checks **only the newest submitted
-message**, not conversation history. Repeat the marker for each new message
-requesting harness work; it is not sticky. During the model's internal steps you
-do not need to send the marker again.
+The marker must be the exact first physical line with a nonempty request below,
+no leading whitespace/blank line/quote/fence/trailing spaces. LF/CRLF both work.
+Only the **newest submitted message** selects ON/OFF; it is not a sticky mode.
 
-- **Exact marker + ready OPEN runtime:** validate prepared identities/receipts and
-  explicitly select the portable `skills/harness-outcome-workflow/SKILL.md`.
-- **Unmarked message at the manager root:** explicit OFF for this submission;
-  no automatic setup or launch. Existing work/cleanup obligations still apply.
-- **Marked but unprepared, CLOSED, stale, or mismatched:** block instead of
-  silently performing ordinary coding. The marker never reopens anything.
-- **Different or nested CWD:** the selector is inert, even inside a nested Git
-  project. Start at the exact manager root to use it.
+- **Marked + ready OPEN scope:** register exact original request/gateway in
+  REGISTERED intake and explicitly select portable v3 workflow. Outer
+  submits entire original text unchanged through `manager intake-submit`; actual
+  separate coordinator accepts through `manager intake-accept` as first tool.
+- **Unmarked at manager root:** OFF for new tasks, no automatic setup/launch.
+  Authentic unmarked coordinator bootstrap continues the immutable accepted
+  request, not a new unrelated task and not a cleanup-only restriction.
+- **Marked unprepared/CLOSED/stale/mismatched:** block, not ordinary coding.
+- **Other/nested CWD:** selector is inert; use exact configured manager root.
 
-Tell ROOT your actual task, desired provider/model/preferences (including the
-initial split reviewer, coding agents, integrator and final auditor), and acceptance
-criteria. Explicit preferences are declarations, not extra authorization or premium
-tier defaults. Worker launch preferences have no defaults: Codex needs model,
-`reasoning_effort`, and `service_tier`; Claude Code needs model and `effort`; Qwen
-Code needs model. Require actual lane IDs/worktrees, tests/review/acceptance,
-retirement, and CLOSED evidence in the result. Generic subagent activity is not
-proof a native harness lane ran.
+Provide authorized role preferences for **planner**, independent split reviewer,
+coding lanes, coordinator and final auditor. Codex lane options require model,
+`reasoning_effort` and `service_tier`; Claude needs model/`effort`; Qwen needs model.
+Declarations grant no premium tiers, extra permission or publish authority.
+
+The gateway does no decomposition/checking/integration/repair routing, consumes no
+manager events and never owns shutdown. Once exact scoped native acceptance is
+confirmed it may yield, truthfully saying accepted—not completed. A PENDING
+submission is not ownership. REGISTERED/PENDING/missing/unknown/stale ownership is
+not a Stop bypass;
+actual manager OPEN Stop still needs CLOSED, including an empty queue.
 
 ## 7. Finish, then prepare the next task
 
-Under default workflow v2, planner ROOT drafts useful bounded coding assignments,
-obtains an independent native split review, records reasoned resolutions, and
-settles/retires that planning lane **before** the
-[explicit native manager handoff](docs/WORKFLOW.md). The frozen plan includes the
-original prompt, all outcomes/cards, context/interfaces and overall criteria. A
-single small coding lane is valid; avoid splitting just to increase agent count.
-The distinct execution coordinator handles native events and integration. It
-repairs the candidate **itself**, not through planner ROOT or original coders;
-after material changes it reruns every original outcome/global check and obtains
-a fresh independent read-only audit of the exact new revision. Continue until all
-original outcomes work together and the whole request is satisfied, or honestly
-report BLOCKED/INCOMPLETE at authorized bounds. Reviewer advice is not a veto;
-explain rejected findings, preserve failures, and never weaken outcomes or reuse
-stale approval. Missing evidence cannot hold shutdown hostage. **That coordinator's
-actual native conversation** settles/retires lanes and runs:
+Coordinator commissions separate native planner and independent reviewer, freezes
+actual resolved planning provenance, launches useful one-task/one-goal native coding
+lanes, checks/integrates all contributions and checks every original/global criterion
+together. It repairs **itself**, not through outer, planner or original coders.
+After material change it reruns all original checks and commissions a fresh
+independent exact-revision whole-result auditor. Advice is advisory, never a PASS
+veto. Keep reasoned dispositions and failed evidence; never weaken outcomes,
+claim partial success or reuse a stale audit.
+
+Only the actual coordinator handles native events/acceptance/retirement and runs:
 
 ```sh
 cd "$HARNESS_DIR"
 "$PYTHON" -B -m orchestrator_harness.operator_launch harness shutdown
 ```
 
-Planner ROOT remains idle until CLOSED. After an offer/accept handoff, an ordinary
-terminal lacking the owner's native identity cannot run manager mutations. Do not
-copy/forge `CODEX_THREAD_ID` or other native identity variables to bypass this.
-Resume the actual owner conversation if interrupted. A read-only terminal
-`scan --no-write` remains diagnostic; a successful scan or empty queue is not a
-CLOSED proof or task success.
+It verifies CLOSED even for incomplete work and produces the final response;
+outer only relays. Resume that exact native coordinator on interruption. Never
+copy/forge `CODEX_THREAD_ID` or other identity variables to bypass ownership. A
+terminal `scan --no-write` or empty queue is neither CLOSED proof nor task success.
+Pending dispatch failures require the [documented coordinator/operator recovery](docs/WORKFLOW.md#failure-final-relay-and-recovery),
+not outer lifecycle fallback or silent abandonment of a monitor.
 
-**After a handed-off run:** the next independent task requires a genuinely fresh
-run/epoch. First have the coordinator prove CLOSED, stop both native clients,
-then preserve/archive the settled runtime and old run records using the
-[concrete fresh-run procedure](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task).
-Run genuine preparation with a new run ID, restart the planner client, and submit
-the next marked task. The old ACTIVE handoff is not authority for a future epoch.
+For the next independent task, coordinator first proves CLOSED. Stop native
+clients and preserve linked worktrees/settled runtime/old run records using the
+[guarded fresh-run procedure](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task).
+Seed the next genuine coordinator before fresh preparation with new run ID. Old
+accepted intake/legacy handoff is never authority for a future run. Legacy unchanged
+same-run `harness setup` reopening is **not** a v3 next-task or hash-mismatch fix.
 
-**Only if no handoff was offered, source/configuration are unchanged, and the
-existing prepared ROOT is CLOSED:** the legacy same-run reopening remains:
+## Limits, troubleshooting, removal and upgrades
 
-```sh
-cd "$HARNESS_DIR"
-"$PYTHON" -B -m orchestrator_harness.operator_launch harness setup &&
-"$PYTHON" -B scripts/prepare_root_launch.py \
-  --harness-dir "$HARNESS_DIR" --workspace "$WORKSPACE" \
-  --run-id "$HARNESS_RUN_ID" --provider codex
-```
+- Selection/readiness is deterministic per submission, not mechanical enforcement
+  of every model action or a security sandbox. Disabled/untrusted hooks, interpreter
+  failure and unsupported native clients defeat delivery; verify native trust.
+- V3 requires separate native session capability and direct authorized dispatch.
+  No automatic launcher, provider retry, fallback model or outer execution exists.
+- OFF does not cancel existing owned work or weaken actual manager Stop/cleanup.
+- Remove only the selector's UserPromptSubmit registration to remove prompt opt-in;
+  restart Codex and preserve unrelated groups/core hooks. Never remove core
+  integration while work exists. Claude is unaffected by this Codex selector.
+- Freeze source/configuration during live work. Follow [safe upgrade](docs/WORKFLOW.md#upgrade-an-existing-installed-harness-safely),
+  preserving prior notes/config/session/logs/receipts and using diagnosed fresh
+  preparation after CLOSED. No external skill install is required.
+- [Historical native results](docs/REAL_WORKFLOW_TEST.md) remain unchanged v1
+  Codex/Linux evidence. V2 reviewed-plan/repair fixtures and v3 offline role-flow
+  fixtures are **not** new provider-backed/model E2E or Claude validation.
 
-Stop on failure and diagnose; neither command automatically retries. This legacy
-sequence is **not** the next-task procedure after a manager handoff, nor a repair
-for source/hash changes. Never fabricate receipts, change run IDs over existing
-records, use `--overwrite` speculatively, or repeatedly run setup.
-
-## Limits, troubleshooting, and removal
-
-- This is deterministic per-submission **selection and readiness checking**, not
-  mechanical enforcement of every model action or proof of task completion.
-  Native delivery must be loaded, enabled, and trusted. A missing interpreter,
-  killed hook, disabled hooks, or native client failure is not an unconditional
-  fail-closed security boundary.
-- Validation is point-in-time. A `null` prepared native session binding does not
-  prove exclusive native-thread ownership or bind it; do not run concurrent
-  ROOT managers over one runtime. Keep source/configuration frozen during work.
-- `HARNESS_OPTIN_NOT_OPEN`: reopen/prelaunch explicitly, then restart/resume.
-  Other hook errors require checking scope, native/logical identities, genuine
-  preparation, and the exact configured command; do not bypass validation.
-- Ordinary unmarked prompts do **not** cancel active workers or bypass the
-  always-installed Stop hook. Finish normal cleanup even if the latest prompt
-  was OFF.
-- To remove only prompt selection, remove its one UserPromptSubmit registration
-  from the active home file and restart Codex. Preserve unrelated groups and
-  core PostToolUse/Stop hooks. Do not remove core integration while work exists.
-- Updating this source, changing paths/config, or replacing prepared hook bytes
-  may invalidate preparation/trust. Stop and use a separately diagnosed native
-  migration, not a copied receipt or an in-place live update.
-
-Focused, non-provider tests from this checkout:
+Focused non-provider tests:
 
 ```sh
 cd "$HARNESS_DIR"
 "$PYTHON" -B -m unittest orchestrator_harness.tests.test_prompt_optin -v
 ```
 
-Those tests do not run a full model-backed coding lane or certify native sandbox
-isolation. Native discovery/trust/loading and a real project lane must be checked
-in the actual target environment before claiming end-to-end provider proof.
-
-Official native contract: [OpenAI hooks documentation](https://learn.chatgpt.com/docs/hooks).
-Provenance and redistribution caveat: [PROVENANCE.md](PROVENANCE.md).
-
-## Upgrading source with existing receipts
-
-Use [the safe upgrade procedure](docs/WORKFLOW.md#upgrade-an-existing-installed-harness-safely).
-Prove CLOSED before changing code. Preserve/archive prior run records; changed
-hashed inputs require diagnosed fresh preparation, not overwritten PASS receipts
-or blind same-run reopening. No external skill installation is needed because
-the selector explicitly gives the configured portable skill path.
+Read [prompt semantics/trust](docs/PROMPT_OPT_IN.md),
+[native hook contract](https://learn.chatgpt.com/docs/hooks), and
+[provenance/redistribution caveat](PROVENANCE.md).

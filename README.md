@@ -1,4 +1,4 @@
-# Portable Coding Orchestrator Harness (v2)
+# Portable Coding Orchestrator Harness — outcome workflow v3
 
 **Install this distribution:** [INSTALL.md](INSTALL.md) gives the complete clone,
 configuration, native-hook trust, startup, and reopening workflow. Source remote:
@@ -9,20 +9,27 @@ first line to request the harness after preparation. Unmarked messages are OFF
 for that submission. The marker does not start a closed runtime. See
 [the prompt opt-in guide](docs/PROMPT_OPT_IN.md) and
 [source provenance / license caveat](PROVENANCE.md). Claude/Qwen do not gain this
-Codex-only selector. Accepted coding prompts explicitly load the portable
-[harness-outcome-workflow skill](skills/harness-outcome-workflow/SKILL.md): planner
-ROOT drafts bounded assignments, an independent native reviewer critiques the split,
-and ROOT resolves that feedback before freezing a handoff. A separate execution
-coordinator integrates and repairs, cycling with fresh independent exact-revision
-auditors until **all original outcomes work together and the whole request is
-satisfied**, or reporting honest incompleteness at resource/permission bounds.
-Use as many useful independent lanes as warranted—not a maximum count; one small
-lane is valid. See
-[workflow and native authority handoff](docs/WORKFLOW.md). The default skill is v2;
-[historical real-provider evidence](docs/REAL_WORKFLOW_TEST.md) covers v1 only,
-not a new native test of v2 initial split review or an actual repair cycle.
+Codex-only selector. Accepted prompts explicitly load the portable
+[harness-outcome-workflow skill](skills/harness-outcome-workflow/SKILL.md), default
+**v3**. The outer conversation only submits the entire original request unchanged
+and relays the final response. A **separate genuine native coordinator**, prepared
+ROOT and manager from intake, commissions a separate planner, independent initial
+split reviewer, useful bounded coding lanes and fresh whole-result auditors. It
+checks/integrates all contributions and repairs itself, cycling with fresh audits
+of each material new revision until **all original outcomes work together and the
+whole request is satisfied**, or honestly reports incompleteness at authorized
+bounds. One small coding lane is valid; do not maximize count.
 
-The Harness v2 coordinates ordinary software work across Git branches and worktrees. One public
+See [executable native startup/intake and workflow](docs/WORKFLOW.md). `[harness]`
+does **not** create/launch a coordinator or prepare/reopen a runtime: a real
+observed separate native session and authorized native seed/resume method are
+prerequisites. No launcher/supervisor/relay is added. The outer gateway can yield
+after exact confirmed acceptance, never by claiming the task completed; actual
+manager retains Stop/cleanup duties. [Historical provider evidence](docs/REAL_WORKFLOW_TEST.md)
+is unchanged **v1** history. V2 reviewed-plan/repair fixtures and v3 role-flow
+fixtures are offline, not new provider-backed E2E proof.
+
+The underlying harness coordinates ordinary software work across Git branches and worktrees. One public
 launcher exposes the entire operator surface:
 
 ```powershell
@@ -75,12 +82,16 @@ Installing the product does not by itself prove a live provider or sandbox run.
 - Does: prepare and launch one coding worker per lane, publish durable lane/event records,
   serialize declared exclusive resources, deliver manager events, and record ROOT's review and
   acceptance.
-- Does not: schedule work, choose providers, decide outcomes, accept results, operate hardware,
-  or replace the root orchestrator. The persistent manager owns planning, launches, decisions,
-  integration, acceptance, promotion, and final cleanup. In the default outcome
-  workflow, planner ROOT hands authority to a distinct native execution coordinator
-  after independently reviewed planning and reasoned resolution; it does not remain the technical manager. The optional watcher is diagnostic-only
-  with `evaluator_enabled: false`.
+- Does not: schedule work, choose providers, decide outcomes, accept results,
+  operate hardware, or replace a native manager. In default workflow v3 the
+  separate native coordinator owns launches, decisions, integration, acceptance,
+  repairs and final cleanup from intake; planner creates/revises the split and
+  outer stays outside. The optional watcher is diagnostic-only with
+  `evaluator_enabled: false`.
+
+In low-level documentation, **ROOT means the native coordinator**, not the outer
+conversation. Actual manager Stop remains fail-closed until CLOSED; only exact
+registered gateway ownership recognition permits a nonmanager yield.
 
 ## Public CLI surface
 
@@ -103,6 +114,8 @@ The sole public CLI is `operator_launch`. Its groups and subcommands:
   resumable unaccepted lane in its retained worktree/session with a fresh complete task card and an
   explicit rationale; a lane retired in the current epoch refuses resume while supported retained
   stopped lanes across closed epochs remain resumable, and there is no automatic retry loop.
+- V3 `manager intake-submit`, `intake-accept`, `plan-freeze`, `intake-status`,
+  and narrow actual-operator `intake-abandon` — see [exact command reference](orchestrator_harness/README.md#manager--v3-intake-and-frozen-plan).
 - `manager acknowledge --event-id <top-level-event-id>` — move one event PENDING -> ACKNOWLEDGED; `manager close
   --event-id --outcome {COMPLETE,BLOCKED} --summary <text>` — close an acknowledged event (managed only).
 - `lease force-release --resource-id <id>` — recover one declared orphaned resource lease. The
@@ -115,7 +128,11 @@ The sole public CLI is `operator_launch`. Its groups and subcommands:
   work.
 - `health reconcile` — rebuild active-lanes and re-derive status.
 
-## One-time ROOT sequence
+## One-time native integration sequence
+
+For default v3, follow [native startup/intake](docs/WORKFLOW.md#native-intake-and-startup)
+**before** this low-level preparation summary. Prepare the separate coordinator,
+never outer; seed before OPEN and use genuine native metadata/ownership.
 
 1. Write `harness-config.json` at the harness root: the closed `harness-config/v1` shape with a
    required absolute `root_workspace`, optional absolute `manager_workspace` (ROOT hooks, skills
@@ -138,7 +155,7 @@ The sole public CLI is `operator_launch`. Its groups and subcommands:
    `python -m orchestrator_harness.operator_launch harness setup` for plain/manual integration and
    for legacy reopening **only when no manager handoff was offered and prepared source/config
    are unchanged** (`--overwrite` only for a separately diagnosed integration change).
-   After an outcome-workflow handoff or source upgrade, use the guarded
+   After a v3 intake, legacy outcome-workflow handoff or source upgrade, use the guarded
    [fresh-run archival and genuine preparation](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task)
    instead; the actual coordinator owns shutdown. Legacy reopening revalidates the existing
    receipt instead of repeating setup. For that unchanged legacy CLOSED runtime, run native `harness setup` first,

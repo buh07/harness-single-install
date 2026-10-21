@@ -1,6 +1,6 @@
 {
-  "schema": "harness-outcome-workflow/v2",
-  "original_prompt": "Reject expired tokens with HTTP 401 without breaking valid-token requests.",
+  "schema": "harness-outcome-workflow/v3",
+  "original_prompt": "[harness]\nReject expired tokens with HTTP 401 without breaking valid-token requests.",
   "constraints": [
     "Keep the public API unchanged; do not push or publish."
   ],
@@ -102,7 +102,7 @@
   "plan_review": {
     "report": {
       "schema": "harness-split-review/v1",
-      "plan_sha256": "c72e9b25cf525b5dedf0131451dddd275cb8311313e24e9ee568516ab88972f9",
+      "plan_sha256": "680c74a37562c8ac4a131fd394337114154bd2f86674651cddeb610a6c3eca1a",
       "prepared_run_id": "example-prepared-run",
       "root_session_id": "example-logical-root",
       "reviewer_session_id": "example-observed-reviewer",
@@ -175,10 +175,33 @@
     "native_review": {
       "prepared_run_id": "example-prepared-run",
       "root_session_id": "example-logical-root",
-      "epoch_id": "example-retired-review-epoch",
+      "epoch_id": "example-owned-epoch",
       "lane_id": "example-plan-review",
       "run_id": "example-worker-invocation",
       "result_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
     }
+  },
+  "planner": {
+    "provider": "codex",
+    "model": "operator-selected-model",
+    "provider_options": {
+      "reasoning_effort": "high",
+      "service_tier": "normal"
+    }
+  },
+  "intake": {
+    "intake_id": "example-synthetic-intake",
+    "request_sha256": "a56215aed0389a988d642017c60dbe78945f7bcba467a25e7345ecfd6d8a9ba4",
+    "gateway_session_id": "example-observed-gateway",
+    "coordinator_session_id": "example-observed-coordinator"
+  },
+  "native_plan": {
+    "epoch_id": "example-owned-epoch",
+    "lane_id": "example-planner",
+    "run_id": "example-planner-invocation",
+    "result_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "prepared_run_id": "example-prepared-run",
+    "root_session_id": "example-logical-root",
+    "planner_session_id": "example-observed-planner"
   }
 }

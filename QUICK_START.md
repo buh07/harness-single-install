@@ -1,4 +1,4 @@
-# Quick Start: Harness v2 Operator Run
+# Quick Start: Native coordinator with outcome workflow v3
 
 The shortest live run: configure once, setup, bootstrap, launch, watch, review, retire. All
 lane operations use the one public launcher:
@@ -34,22 +34,26 @@ Write `resource-manifest.json` (closed `resource-manifest/v1` shape):
 Declare each exclusive resource as `{"id": "<name>", "exclusive": true}` in `resources`.
 `managed_coordination: "disabled"` runs plain lanes without the manager queue.
 
-## Default coding workflow
+## Default v3 workflow: outer stays outside
 
-Accepted `[harness]` coding prompts explicitly load
-[the outcome workflow skill](skills/harness-outcome-workflow/SKILL.md). Planner
-ROOT drafts a proportionate split, obtains an independent native initial split
-review, resolves its findings, and settles/retires that lane before handoff. One
-useful coding lane is valid; do not maximize lane count. A distinct execution
-coordinator owns checking, integration, repairs and cleanup. After each material
-repair it reruns **all** original outcome/global checks and commissions a fresh
-independent exact-revision audit until the whole result works or resources require
-an honest BLOCKED/INCOMPLETE report.
-Read [WORKFLOW.md](docs/WORKFLOW.md) for contract/handoff and unmarked recipient
-bootstrap. No supported distinct native manager client means BLOCKED, not a
-planner fallback. Noncoding requests need no artificial coding lanes.
+Accepted `[harness]` messages select [the workflow skill](skills/harness-outcome-workflow/SKILL.md).
+Outer only submits exact original text and relays final response. A separate
+native execution coordinator is prepared ROOT/manager from intake. It commissions
+separate planner and independent split reviewer lanes, freezes complete outcomes/
+cards/global criteria, launches useful coding lanes, checks/integrates everything,
+and repairs itself with all original checks and fresh independent exact-revision
+audits after material changes. One small coding lane is valid. Only coordinator
+owns events/watch, acceptance, retirement and shutdown. Gateway may yield after
+confirmed acceptance; actual manager remains subject to OPEN Stop.
 
-## 2. Prepare before ROOT starts
+**First follow [executable startup/intake](docs/WORKFLOW.md#native-intake-and-startup):**
+create/observe a genuine native coordinator before OPEN, genuinely prepare that
+coordinator, submit unchanged request from separate gateway, resume exact native
+coordinator and accept as first tool. Marker selection launches nothing and grants
+no permissions. Missing native capability means BLOCKED, not outer/planner fallback.
+The low-level lane commands below are for the actual coordinator, not the gateway.
+
+## 2. Prepare the native coordinator before execution
 
 For a fresh managed ROOT, run pre-launch preparation FIRST: it performs the one native setup
 internally and records the run-bound receipt. On Windows Codex the read-only sandbox gate must be
@@ -75,7 +79,7 @@ python -m orchestrator_harness.operator_launch harness setup
 ```
 
 It is for plain/manual integration and for legacy reopening when **no manager
-handoff was offered** and prepared source/configuration are unchanged. After an
+handoff was offered** and prepared source/configuration are unchanged. After a v3 intake or legacy
 outcome-workflow handoff, the actual coordinator owns shutdown; the next task uses
 [archived fresh-run preparation](docs/WORKFLOW.md#fresh-run-after-a-handed-off-task),
 not terminal same-run reopening. Reopening an unchanged legacy ROOT revalidates the

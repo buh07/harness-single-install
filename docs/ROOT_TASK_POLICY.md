@@ -1,39 +1,43 @@
-# Coding task policy: outcome workflow v2
+# Task policy: external gateway and outcome workflow v3
 
-Accepted `[harness]` coding submissions explicitly select the versioned
-[`harness-outcome-workflow` skill](../skills/harness-outcome-workflow/SKILL.md),
-not optional unselected advice. [WORKFLOW.md](WORKFLOW.md) owns the procedure.
+Accepted `[harness]` submissions explicitly select the portable
+[`harness-outcome-workflow` skill](../skills/harness-outcome-workflow/SKILL.md).
+[WORKFLOW.md](WORKFLOW.md) owns the executable procedure and record references.
 
-Planner ROOT drafts one concrete checkable goal per useful coding assignment,
-preserving the complete original request, constraints, context/interfaces and
-whole-result criteria. A fresh independent native initial reviewer examines the
-**split**, including coverage, semantic independence, dependency DAG, ownership,
-granularity/coordination cost and global checks. One small coding lane is valid;
-maximize useful independence, not count. Planner resolves findings with reasons,
-freezes the plan and settles/retires the planning lane before native handoff.
-It does no product implementation/checking/integration or repairs.
+The outer conversation **only submits the complete original request unchanged
+and relays the final response**. It is neither planner nor native ROOT, and never
+owns technical checking, integration, repair routing, events, watch or shutdown.
+A separate genuine native execution/integration coordinator is prepared logical
+ROOT and manager from intake. It commissions a separate native planner and fresh
+independent split reviewer; the planner creates/revises the ledger, not outer or
+a manager pretending to be planner. Coordinator owns their normal lane lifecycle.
 
-A distinct integration/execution coordinator receives **every** assignment and
-original outcome. It owns native coding lanes, integration, all repairs and
-lifecycle. A fresh independent native final auditor checks the exact integrated
-revision against the whole original request and all individual/global criteria.
-The coordinator evaluates findings and repairs **itself**, not through ROOT or
-original coders. After material changes it reruns **all** original outcome/global
-checks and commissions a fresh exact-revision auditor. Continue until all original
-outcomes work together and the overall request is satisfied, or honestly report
-BLOCKED/INCOMPLETE at authorized bounds. Do not weaken/relabel outcomes, reuse
-stale audits, or mistake partial progress/CLOSED for task success.
+Planning preserves the whole request and constraints. Each useful coding card
+has one concrete task and one checkable outcome, explicit scope, dependencies,
+interfaces, deliverables and checks. Review coverage, semantic independence,
+ownership/DAG, one goal per card, coordination cost and global criteria. One small
+coding lane is valid. Freeze exact current planner/review provenance and original
+request linkage, recording reasoned dispositions rather than a reviewer PASS gate.
 
-Reviewers are advisory, never vetoes; owners explain accepted/rejected findings.
-Typed validation checks declared plan/review linkage, actual identity comparisons,
-coverage and revisions—not evidence truth or full behavioral enforcement. Missing
-review evidence precludes claiming the reviewed stage was completed but never
-holds cleanup hostage. Always settle work, shut down and prove CLOSED.
+Coordinator receives **every** original outcome/card and whole-result criterion,
+launches native coding lanes, checks/integrates contributions, and checks all
+outcomes together. A fresh independent native whole-result auditor checks the
+exact unified revision against the entire original request. Coordinator makes
+justified repairs **itself**, not through outer, planner or original coders.
+After material changes it reruns **all** original checks and commissions a fresh
+independent exact-revision auditor. Continue within authorized bounds; never
+weaken outcomes, reuse stale approval or mistake partial results/CLOSED for success.
 
-This policy grants no new permissions, model defaults, premium tier, auth scope or
-publish authority. Missing capabilities/preferences mean clarification or BLOCKED,
-not invented identities, fallback planner execution, automatic retries, or a new
-wrapper/scheduler/relay/AI watcher. Noncoding requests need no artificial lanes.
-[Historical real-provider results](REAL_WORKFLOW_TEST.md) remain **v1** evidence;
-v2 initial-review and repair-loop validation uses offline tests, not a new native
-E2E or actual historical repair-cycle claim.
+Reviews are advisory, never vetoes; owners explain accepted/declined findings.
+Typed validation proves declared linkage/coverage/identity/revision consistency,
+not truth or semantic completion. Missing evidence means incomplete, not a reason
+to hold cleanup hostage. Coordinator always settles work, shuts down and proves
+CLOSED. Gateway can yield after exact confirmed ownership; this never exempts
+the actual manager from OPEN Stop obligations or grants gateway manager access.
+
+This grants no model defaults, premium tier, permissions, auth or publish scope.
+Missing native capabilities mean BLOCKED and the documented coordinator/operator
+recovery path—not outer fallback, forged identities or a new launcher/relay.
+Noncoding selected tasks still go to coordinator, with no artificial coding lanes.
+[Historical provider results](REAL_WORKFLOW_TEST.md) are v1 only; v2 offline review/
+repair fixtures and v3 offline role-flow tests are not a new provider-backed E2E.

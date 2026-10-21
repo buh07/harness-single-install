@@ -1,142 +1,109 @@
-# Explicit Codex harness opt-in
+# Explicit Codex harness opt-in: v3 external gateway
 
-Use an exact marker instead of asking the model to infer when you want the
-harness. This additive native `UserPromptSubmit` hook is **Codex-only**. It does
-not change Claude settings, launch a worker, reopen the runtime, or replace the
-existing PostToolUse and Stop hooks.
+Put `[harness]` **alone on the first line of the newest submitted message**, then
+a nonempty task. Exact case, no leading blank/indentation/quote/fence or trailing
+spaces; LF/CRLF work. Mentioning the marker later or in an example does not select
+it. Every new task needs its own marker; prior prompts do not create sticky mode.
 
-**Fresh installation:** follow [INSTALL.md](../INSTALL.md) for full-source clone,
-configuration, the safe additive native home-hook merge, trust, and startup.
-Create the ignored, operator-owned `local-config/INSTALLATION.md` notes required
-by that guide before preparation; they are not shipped with this repository.
+```text
+[harness]
+Implement the feature and run the focused regression tests.
+```
 
-## Everyday usage
+## What happens—and what does not
 
-1. Prepare the managed Codex ROOT **before starting the client**, following
-   [INSTALL.md](../INSTALL.md), `QUICK_START.md`, and your required operator-owned
-   `local-config/INSTALLATION.md`.
-2. Start/resume Codex with the configured Codex home, at the **exact configured
-   manager workspace root**. Review/enable the opt-in hook through native
-   `/hooks` trust controls. Restart/resume after installing a hook; a file on
-   disk is not proof an existing client has loaded or trusted it.
-3. To use the harness, put this exact, case-sensitive text on the first line:
+At the **exact configured manager CWD**, native UserPromptSubmit validates genuine
+OPEN preparation/readiness and selects installed
+[`harness-outcome-workflow` v3](../skills/harness-outcome-workflow/SKILL.md), supplying
+its absolute path. After successful readiness, the authentic native marker hook
+registers that exact original request and observed gateway identity as REGISTERED
+intake before the first tool. This closes pre-submission manager/Stop ambiguity;
+it is not manager authority, a sticky mode or a second actionable task queue. No
+external skill install or automatic discovery is needed.
 
-   ```text
-   [harness]
-   Implement the requested feature and run its focused tests.
-   ```
+The outer conversation only submits the **complete original raw text unchanged**
+and relays the final response. It is not planner, prepared logical ROOT, manager,
+technical checker, repair router, watcher or cleanup owner. A separate genuine
+native coordinator owns management from intake, commissions separate native
+planner and independent split-reviewer lanes, then coding/integration/fresh-audit
+repair work. See [actual native startup/intake](WORKFLOW.md#native-intake-and-startup).
 
-   Put a nonempty task after the marker. LF and CRLF line endings both work.
-   There must be **no leading blank line, indentation, spaces after the marker,
-   quote prefix, or Markdown fence** in the actual submitted prompt. Merely
-   mentioning `harness`, including `[harness]` later, or showing it in a quoted
-   example does not activate the hook.
-4. Without that first line, submit an ordinary prompt normally. The hook adds
-   an explicit **OFF for this submission** instruction and starts nothing. A
-   prior ON prompt is not a persistent toggle. Use the marker again for every
-   new task/submission that should use the harness; continuation of an already
-   accepted native handoff is not a new task (see below).
+**The hook does not create/resume a native conversation or launch a provider.**
+Only one immutable intake belongs to a prepared run. A different later marked
+request cannot overwrite it; use a fresh prepared run after owned cleanup. An
+unmarked prompt creates no new registration.
 
-An unmarked message **does not cancel existing work** or remove worker ownership,
-manager, safety, or cleanup obligations. Finish/retire existing lanes normally.
-The always-installed native Stop hook still requires `CLOSED` before a final
-response, even when the queue is empty. OFF is not a way to bypass it.
+A supported authorized native seed/observe/resume method and correct genuine
+preparation are prerequisites. `[harness]` never sets up/reopens a runtime or grants
+permissions. Absent capability is BLOCKED, not outer performing the selected task.
+Noncoding selected requests also go to coordinator without artificial coding lanes.
 
-The coordinator's required **unmarked recipient bootstrap** may accept an existing
-valid native manager handoff as its first tool operation. After genuine native
-acceptance, it continues the **entire previously marked immutable contract**:
-initial assignment launches (even when no workers existed at transfer), checks,
-integration, repairs, independent audits and shutdown. OFF applies to new work
-requested by the unmarked submission, not this existing contract. It does not
-restrict the accepted coordinator to cleanup or to workers already running.
+Unmarked prompts receive OFF for **new** tasks and start nothing. They do not
+cancel existing work. An authentic coordinator's unmarked first-tool acceptance
+bootstrap continues the submitted immutable request, including initial lane
+launches—not only cleanup—and grants no unrelated new unmarked task authority.
 
-This is an instruction clarification, not automatic activation or an authority
-grant. An offered handoff or a prompt claiming acceptance is insufficient; native
-ownership, readiness and permission checks still apply. The unmarked hook path
-does not inspect authority or preparation, start anything, or automatically set
-up, prepare or reopen a runtime. An ordinary unmarked prompt without an accepted
-handoff remains OFF and authorizes no new harness task.
+## Ownership, Stop and failure
 
-### If a marked prompt is blocked
+Outer gateway submits exact UTF-8 request bytes—including marker, line endings,
+Unicode and trailing whitespace—using `manager intake-submit`, advancing REGISTERED to PENDING with its designated
+real coordinator. Do not paraphrase,
+strip marker or normalize newlines. Use `--request-sha256` from native prompt
+hook context so an altered copy is rejected. Submission is PENDING, not accepted/completed.
+The actual designated coordinator accepts as first tool through `intake-accept`.
+Gateway never resolves/binds prepared ROOT or obtains generic manager commands.
 
-The hook explicitly blocks the prompt, rather than silently doing ordinary
-coding. It never runs setup/preparation or retries anything for you. The
-rejection identifies input, scope/configuration, identity, or readiness failure;
-the detailed native diagnostic is obtained through the installed operator
-instructions, not by echoing potentially sensitive input/configuration.
+After **exact scoped confirmed native ownership**, the registered nonworker
+gateway may finish/yield and receives no manager notices or manager delivery/
+liveness receipts. It may report accepted, not task-complete. Actual coordinator
+OPEN Stop still requires CLOSED even with empty queue. Unknown, stale, corrupt,
+pending or identity-inconsistent ownership never gets a blanket Stop bypass just
+because some manager exists. OFF cannot cancel owner obligations.
 
-If the installed runtime is **CLOSED**, a marked prompt is expected to block.
-Follow the [installation lifecycle instructions](../INSTALL.md#7-finish-then-prepare-the-next-task):
+If dispatch fails, use [explicit recovery](WORKFLOW.md#failure-final-relay-and-recovery):
+resume the designated actual coordinator to accept/shut down, or have an actual
+independent operator terminal use narrow REGISTERED/PENDING never-accepted/no-work
+`intake-abandon`.
+Outer cannot
+impersonate an owner, run shutdown, erase intake or claim CLOSED; prelaunch resources
+may remain outstanding until supported cleanup. No provider retries or relay appear.
 
-- **After any manager handoff:** use the
-  [fresh-run archive/preparation procedure](WORKFLOW.md#fresh-run-after-a-handed-off-task)
-  after the actual coordinator proves CLOSED and both clients are stopped.
-  An ordinary terminal or the old planner cannot impersonate the coordinator.
-- **No handoff and unchanged prepared source/configuration:** legacy native
-  `harness setup` once, followed by preparation with the same recorded run ID,
-  can reopen that existing ROOT. This does not apply to a source/hash mismatch.
-- **New installation or changed authority inputs:** follow genuine fresh
-  preparation after preserving the settled prior run. Do not fabricate/delete
-  receipts, change a prepared provider binding, or blindly repeat failed setup.
+## Deterministic boundary and limits
 
-Restart the correctly scoped client before submitting the marked task. Every
-finished harness task ends CLOSED; no marked prompt starts a fresh run or reopens
-anything automatically.
+The selector matches only newest exact first-line marker, exact configured root
+CWD, Codex provider binding, native payload identity and consistent inherited
+identities. It requires nonempty task/native turn identity and genuine OPEN
+`validate_prepared_root` readiness: receipt/config/workspace/hook hashes, prepared
+scope, actual native monitor owner and applicable health/service checks. Then it
+atomically registers exact native prompt bytes/hash and gateway identity; an
+altered copied request cannot replace that original. Missing,
+stale, CLOSED, mismatched or unhealthy preparation blocks rather than silently
+coding normally. The registered intake is provenance/lifecycle data, not an
+actionable prompt queue. It does not bind gateway as ROOT, alter preparation
+receipts or launch workers/services/models.
 
-## What is deterministic
+Marked requests at other/nested CWDs are inert; malformed input without trustworthy
+scope fails explicitly. Readiness is point-in-time, not a future permission lease.
+Do not run concurrent managers or multiple control hosts over one runtime.
 
-For a submission at the exact configured manager CWD, the hook:
+**Instruction selection/typed records are not semantic proof or a security sandbox.**
+Request real native role/lane identities, unified exact revision, complete original
+outcome/global checks, current independent audit/resolutions and coordinator CLOSED
+proof. Generic subagents or hook presence prove none of these. Initial review and
+final audit are advisory, never PASS vetoes; missing evidence means incomplete,
+not permission to hold cleanup hostage. Historical [v1 provider test](REAL_WORKFLOW_TEST.md)
+and v2/v3 offline fixtures must not be relabeled as a native v3/model E2E.
 
-- Matches only the exact first physical line `[harness]`.
-- Requires a task, native `session_id` and `turn_id`, the Codex provider binding,
-  and consistent inherited native/logical ROOT identities where supplied.
-- Reads the genuine prepared ROOT run/session; it does not invent a second mode
-  registry, bind an unbound native session, or persist prompts/mode receipts.
-- Requires OPEN, then calls the existing full
-  `scripts.prepare_root_launch.validate_prepared_root` validator. This checks
-  receipt/configuration/workspace/hook hashes, prepared session, monitor owner
-  and native live readiness, plus applicable health/service checks. Missing,
-  stale, CLOSED, mismatched, and unhealthy preparation is rejected.
-- Injects concise ROOT workflow instructions on acceptance, or explicit OFF
-  instructions for an unmarked submission. Neither path starts services,
-  setup, preparation, a worker, a model call, a retry, or a supervisor.
+## If a marked prompt is blocked
 
-Validation is point-in-time, not a lease over all future model actions. Existing
-native validation takes its ordinary record/admission locks; this hook does not
-alter receipts, authority records, configuration, or runtime state. If the
-prepared native session is `null`, validation does **not** prove exclusive native
-thread ownership or bind it. Keep one manager/control host and do not run
-concurrent ROOT sessions over the same runtime.
-
-**Instruction delivery is not full workflow enforcement or a security sandbox.**
-ON explicitly selects the configured
-[`harness-outcome-workflow` skill](../skills/harness-outcome-workflow/SKILL.md).
-For coding, default skill v2 has planner ROOT obtain an independent initial split
-review of the full original request, all cards, context/interfaces and criteria,
-then resolve findings and settle/retire that planning lane **before** transferring
-the frozen plan to a distinct integration/execution coordinator. Use useful bounded
-independent lanes, not maximum count. The coordinator checks/integrates all
-contributions and repairs the unified result itself—not through ROOT or original
-coders. After each material revision it reruns all original outcome/global checks
-and obtains a fresh independent exact-revision read-only audit. Continue until all
-original outcomes work together and the whole request is fulfilled, or report
-honest BLOCKED/INCOMPLETE within authorized bounds.
-Planner ROOT does not inspect/integrate code, delegate repairs or handle lifecycle
-work after accepted transfer. See [WORKFLOW.md](WORKFLOW.md) for the exact handoff,
-recipient bootstrap and missing-capability BLOCKED behavior. Noncoding requests
-do not need artificial coding lanes/handoff.
-
-Ask for real lane IDs/worktrees, unified revision, complete outcome/audit evidence
-and CLOSED proof. Generic Codex subagents or hook presence prove none of these.
-The initial review and final product audit are distinct; both are advisory, with
-reasoned owner resolutions rather than reviewer PASS vetoes. V2 typed schema
-checks reject missing linkage/coverage, stale revisions and declared nonindependence,
-but do not prove evidence truth or full compliance. The native Stop gate still
-requires CLOSED, not task success. Planner waits idle after transfer until CLOSED;
-there is no Stop bypass. No external `$CODEX_HOME/skills` installation is required:
-the hook supplies the configured portable skill's path explicitly. The
-[historical native acceptance test](REAL_WORKFLOW_TEST.md) is v1 evidence; v2
-initial-review/repair-loop checks are offline fixtures, not a new native E2E claim.
+Follow [INSTALL.md](../INSTALL.md) and operator-owned ignored
+`local-config/INSTALLATION.md`. Stop on scope/identity/readiness/hash diagnostics;
+do not bypass gates, fabricate receipts or blindly repeat setup. A CLOSED runtime
+must be genuinely prepared afresh after guarded archival. For v3 intake or legacy
+handoff use [fresh-run procedure](WORKFLOW.md#fresh-run-after-a-handed-off-task), not
+same-run legacy reopening. Changed source/hooks require [safe upgrade](WORKFLOW.md#upgrade-an-existing-installed-harness-safely).
+Restart/resume correctly scoped native clients with hooks loaded/trusted before
+new selection. Every managed task ends CLOSED; marker never opens it automatically.
 
 ## Scope, installation, and native trust
 
@@ -191,24 +158,18 @@ To remove this opt-in feature, remove only its UserPromptSubmit command/group
 from the native home hook file and restart Codex. Do not remove the original
 PostToolUse/Stop hooks while managed work exists. Claude is unaffected either way.
 
-## Validation
-
-Focused contract tests:
+## Validation and evidence limits
 
 ```sh
 python -B -m unittest orchestrator_harness.tests.test_prompt_optin -v
 ```
 
-These tests label mocked preparation explicitly; they do not prove a live model
-invocation or provider isolation. A disposable real setup/preparation/native
-monitor check validates the lifecycle boundary separately. User-facing native
-trust/loading must also be checked in the actual client after installation.
+Offline fixtures explicitly use test identities/preparation doubles; they do not
+prove live provider/model behavior, native isolation or client trust/loading. V1
+[real-provider report](REAL_WORKFLOW_TEST.md) stays unchanged historical evidence.
+Check target-native discovery/trust explicitly after installing.
 
-Native hook contract: [OpenAI hook documentation](https://learn.chatgpt.com/docs/hooks).
-
-## Source upgrades
-
-Changing pinned code/hooks may invalidate old receipts. Prove CLOSED first and
-follow [the upgrade procedure](WORKFLOW.md#upgrade-an-existing-installed-harness-safely);
-preserve/archive records and use diagnosed fresh preparation, never overwrite
-receipts or blindly repeat same-run reopening after a hash mismatch.
+Source updates may invalidate pinned receipts; [preserve and genuinely prepare
+afresh](WORKFLOW.md#upgrade-an-existing-installed-harness-safely), never overwrite
+receipts or silently reopen. Native hook contract:
+[OpenAI hook documentation](https://learn.chatgpt.com/docs/hooks).

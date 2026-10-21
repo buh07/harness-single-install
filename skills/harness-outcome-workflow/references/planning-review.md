@@ -1,16 +1,16 @@
 # Independent initial split review
 
-This review evaluates a **plan before coding**, not the final product. Planner
-ROOT still owns the runtime and may launch/settle this planning-only native lane.
-It must finish reasoned resolution and settle/retire the lane before manager
-handoff. The separate coordinator then owns implementation and all later repairs.
+This review evaluates the separate planner's **plan before coding**, not the final
+product. The native coordinator owns the runtime from intake and launches/settles
+both separate planner and independent reviewer lanes. Planner produces/revises
+the ledger; it is neither outer gateway nor manager. Outer does none of this.
 
 ## Reviewer input and one bounded goal
 
 Provide the unabridged original request and constraints; all proposed outcomes,
 whole-result criteria and task cards; relevant repository context/interfaces;
 shared-path ownership and dependencies; proposed checks; and explicit authorized
-role preferences, including this reviewer. Its one goal is to identify whether
+role preferences, including planner and this reviewer. Its one goal is to identify whether
 this split faithfully and efficiently enables the whole request. Product source
 is read-only by assignment (not a claim of operating-system immutability); use
 private evidence and no product-writing/resource lease.
@@ -39,7 +39,7 @@ Review these dimensions with specific references to outcomes/cards or source:
 
 Return findings as an artifact attached to the ordinary native RESULT, with the
 observed reviewer identity and reviewed plan linkage required by the contract
-reference. Planner discovers the real completion through native blocking watch,
+reference. Coordinator discovers the real completion through native blocking watch,
 not transcript polling or an AI relay. Schema validity is not proof that review
 or tests occurred.
 
@@ -54,12 +54,14 @@ bounds rather than running endless rounds merely to secure a PASS label.
 The reviewer is advisory. It cannot veto the owner's resolution or shutdown.
 Native completion acceptance records that its assigned review was delivered,
 **not** that the reviewer approved the plan or product. Do not require a PASS
-recommendation to transfer authority; do require the declared review and reasoned
-resolution for a successful v2 reviewed-plan handoff. If review cannot be obtained
+recommendation to proceed; do require actual distinct native planner/reviewer
+evidence and reasoned resolutions to freeze a successful v3 reviewed plan. If review cannot be obtained
 within authorized resources, record BLOCKED/INCOMPLETE and clean up rather than
 claiming this stage happened or holding an OPEN runtime indefinitely.
 
 Keep the ordinary lane RESULT, acknowledged event, completion-review/settlement
-and retirement evidence. Only after the planning lane is fully settled and retired
-may planner offer the immutable resolved contract. After accepted handoff it is
-idle; the coordinator—not planner or initial coders—owns final-result repairs.
+and retirement evidence. Coordinator freezes the immutable resolved contract only
+with exact current planner/reviewer provenance after both lanes are settled and
+retired. The same coordinator remains manager across planning gaps and owns coding,
+integration, final-result repairs, audits and shutdown. Planner does not become
+manager; outer does not obtain or reclaim any lifecycle authority.

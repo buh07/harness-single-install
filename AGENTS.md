@@ -33,31 +33,29 @@ archived plans and historical ownership records do not grant additional work.
   Finish when the everyday workflows work end to end and serious risks are
   covered; exhaustive internal-path audits and repeated whole-product review
   cohorts are not required.
-- Assign product implementation to fresh, scoped implementation workers. In the
-  outcome workflow v2, planning ROOT drafts the complete original outcome ledger,
-  obtains a fresh independent native initial split review, records reasoned
-  resolutions, settles/retires that planning-only lane, then makes the supported
-  explicit native manager handoff with the frozen complete plan. Review useful
-  semantic independence, coverage, interfaces, ownership/DAG and coordination
-  cost—not maximum lane count; one small coding lane is valid. The
-  execution/integration coordinator then exclusively owns the logical ROOT lifecycle, integration,
-  checks, bounded integration repairs, acceptance, retirement, and shutdown. It
-  receives the complete original prompt, every assigned outcome, all task cards,
-  relevant context/interfaces and global criteria. It performs justified repairs
-  itself (not via planner ROOT or original coders), reruns every original outcome
-  and global check after material changes, and obtains a fresh independent native
-  audit of the exact new revision. Success requires all original outcomes working
-  together and the whole request satisfied; resource/permission limits mean an
-  honest incomplete report plus cleanup, not weakened outcomes or stale approval.
-  Transfer shared paths with one implementation writer at a time; planning ROOT does not
-  code, check, integrate, or delegate repairs after handoff. This is an explicit
-  ownership transfer, not an autonomous harness replacement for a manager.
+- In the default v3 outcome workflow, outer conversation is only an unchanged
+  raw-request submission/final-response gateway. It is not planner, native ROOT,
+  technical checker, repair router, event consumer, watcher or shutdown owner.
+  A distinct genuinely prepared native execution/integration coordinator owns
+  management from intake. It commissions a separate native planner and independent
+  initial split reviewer; planner creates/revises all bounded cards and original
+  outcome/global criteria. Coordinator handles their native watch/events and
+  lifecycle, freezes authentic exact-plan provenance, then commissions fresh
+  scoped coding workers. One task/one checkable goal per useful coding lane;
+  maximize useful independence, not count. Keep single-writer shared paths and
+  explicit dependency/interfaces. Coordinator gets the full original request,
+  every outcome/card and global criterion, checks/integrates all contributions,
+  and repairs the unified candidate itself—not through outer, planner or original
+  coders. After material changes rerun all original checks and commission a fresh
+  independent exact-revision whole-result auditor. All outcomes must work together;
+  bounded failure means honest incomplete report plus owned cleanup, never weakened
+  requirements or stale approval. This is explicit native ownership, not a scheduler.
 - Testing, validation, and review subagents are advisory only. They can NEVER
-  block progress, veto acceptance, require fixes, or prevent shutdown. ROOT alone
+  block progress, veto acceptance, require fixes, or prevent shutdown. The native manager alone
   judges their criticisms; under the outcome workflow that owner is the
   execution/integration coordinator, which performs justified bounded repairs.
   Reviewer PASS verdicts are never authority gates; owners record reasoned
-  resolutions. V2 successful reviewed-plan handoff requires actual initial review
+  resolutions. V3 successful plan freeze requires actual separate planner/reviewer
   evidence and settled retirement, not a reviewer PASS recommendation. Missing
   reviews cannot delay shutdown but cannot be claimed as completed. Actual checks
   are reported honestly. Advisory agents have read-only product source and private

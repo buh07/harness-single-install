@@ -1,4 +1,4 @@
-# Orchestrator Harness v2: Command and Contract Reference
+# Orchestrator Harness: Command and v3 Workflow Reference
 
 The package exposes one public launcher:
 
@@ -11,6 +11,16 @@ next_action }`; `--json` emits the machine-readable result object. Success print
 line and exits 0; failure prints one stable failure code and a message on stderr and exits
 non-zero. The harness never schedules work, chooses providers, decides outcomes, accepts
 results, operates hardware, or replaces the root orchestrator.
+
+## Default workflow v3 ownership
+
+The outer conversation only submits unchanged request bytes and relays the final
+response. A separate genuine native coordinator is prepared logical ROOT/manager
+from intake; it commissions separate planner and independent reviewer native lanes,
+then coding, integration and fresh exact-revision whole-result auditing. See
+[executable startup/intake](../docs/WORKFLOW.md#native-intake-and-startup) before
+using low-level manager commands. Legacy v1/v2 handoff records are history, not the
+v3 default. The infrastructure's ROOT term denotes coordinator, never outer.
 
 ## Command reference
 
@@ -26,6 +36,31 @@ results, operates hardware, or replaces the root orchestrator.
 - `harness shutdown` — end the whole runtime: OPEN -> SHUTTING_DOWN, each lane's controller cleans
   its own processes, the monitor stops, the active-epoch marker clears, and the runtime closes.
   It never kills by broad process name.
+
+### `manager` — v3 intake and frozen plan
+
+- `intake-submit --to-native-session-id <actual-id> --request-file <UTF8-file>
+  --request-sha256 <native-prompt-hash>` — actual gateway admits unchanged original
+  request from authentic prompt-hook REGISTERED intake to designated separate
+  native coordinator; PENDING grants no manager
+  authority. No client is created and no task is planned.
+- `intake-accept --intake-id <id> --request-sha256 <hash>` — designated actual native
+  coordinator's first tool accepts manager ownership from inception after readiness
+  and scope/identity checks. Other roles cannot manage this runtime.
+- `plan-freeze --intake-id <id> --contract <v3-contract>` — coordinator freezes full
+  immutable original-outcome ledger/cards/global criteria with genuine separate
+  native planner and independent split-review provenance.
+- `intake-status --intake-id <id>` — narrow read-only intake status, not queue
+  delivery, semantic validation or task-success proof.
+- `intake-abandon --intake-id <id> --request-sha256 <hash>` — **independent actual
+  operator terminal only**, exact REGISTERED/PENDING never-accepted/no-admitted-work failure
+  cleanup. Serializes with acceptance, preserves terminal ABANDONED evidence and
+  performs shutdown. No agent may strip its identity to pretend to be operator.
+  Not gateway authority or takeover of accepted work.
+
+See [versioned records](../skills/harness-outcome-workflow/references/contract.md)
+for exact hashes/lifecycle. Native creation/resume/trust/permissions are explicit
+prerequisites; this product adds no launcher, scheduler, retry controller or relay.
 
 ### `lane` — lane lifecycle
 

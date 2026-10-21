@@ -1,42 +1,50 @@
-# Versioned reviewed plan, audit and final-result records
+# Versioned intake, reviewed plan, audit and final-result records
 
-## Contract: default v2, legacy v1
+## Contract: default v3, saved v1/v2 legacy
 
-The default selected contract is `harness-outcome-workflow/v2`. Native handoff
-snapshots its validated content and SHA256, preventing later edits from silently
-changing the execution agreement. Preserve all original outcomes/criteria; a
-meaningful scope change requires explicit new agreement, never silent weakening.
-`harness-outcome-workflow/v1` remains readable for existing records; it does not
-satisfy or demonstrate the added v2 initial-review stage.
+The default is `harness-outcome-workflow/v3`, with a genuine external gateway,
+native coordinator owner from intake and separate native planner. V1/v2 saved
+records retain their historical semantics; they do not demonstrate v3 ownership.
+[contract.example.json](contract.example.json) is **synthetic v3**, never a native
+receipt. [contract.v2.example.json](contract.v2.example.json) and
+[contract.v1.example.json](contract.v1.example.json) preserve historical examples.
+Replace example preferences with actual authorized provider/model/options. These
+declarations grant no permissions, premium tier or launch authority.
 
-[contract.example.json](contract.example.json) shows a complete **synthetic v2**
-record; [contract.v1.example.json](contract.v1.example.json) preserves the legacy
-example. Replace example preferences with actual authorized settings. The v2
-review identities/hashes are placeholders, not native receipts or launchable
-handoff authority. Never copy them into real native records.
+All versions preserve the original prompt, constraints, original outcomes, coding
+assignments, global integration criteria and coordinator/auditor preferences.
+Each coding assignment links exactly one outcome with agreeing reverse links,
+one concrete task/goal, explicit ownership/dependencies and checks. Dependencies
+form a DAG; outcome/criterion IDs are disjoint. Global criteria carry `id`,
+`description`, `outcome_ids`, `checks`; integration-covered outcomes may have no
+coding assignment. Empty constraints/exclusions/dependencies are allowed.
 
-Both versions preserve the original prompt, constraints, outcomes, assignments,
-integration criteria, coordinator and auditor preferences. Assignment IDs link to
-exactly one outcome; reverse links agree. Dependencies form an acyclic DAG and
-outcome/criterion IDs are disjoint. All outcomes have meaningful acceptance
-criteria; each global criterion has `id`, `description`, `outcome_ids`, `checks`.
-A global outcome can have `assignment_ids: []` when covered by integration checks.
-`constraints`, assignment `exclusions` and `dependencies` may be empty. Preferences
-use native provider validation; they are declarations, not extra permissions.
+V2 added nonempty `repository_context`, `interfaces` (possibly empty), explicit
+`split_reviewer` preferences and `plan_review: {report,resolutions,native_review}`.
+V3 also requires:
 
-V2 additionally requires:
+- `planner`: explicit `{provider,model,provider_options}` for the separate planner.
+- `intake`: `{intake_id,request_sha256,gateway_session_id,coordinator_session_id}`,
+  bound to exact current immutable native intake. `original_prompt` must equal
+  the original complete submitted text, including marker and line endings; its
+  UTF-8 hash must equal intake request hash. Never normalize/paraphrase it.
+- `native_plan`: `{epoch_id,lane_id,run_id,result_sha256,prepared_run_id,
+  root_session_id,planner_session_id}` for actual observed completed/retired
+  read-only-product planner provenance. Gateway, coordinator, planner and initial
+  reviewer must be distinct genuine native identities, not role labels.
 
-- `repository_context`: nonempty text list with relevant task context.
-- `interfaces`: text list, possibly empty, identifying relevant cross-lane contracts.
-- `split_reviewer`: explicit provider/model/provider_options like other roles.
-- `plan_review`: `{report, resolutions, native_review}` as below.
+Planner draft has `native_plan: null` and `plan_review: null`, delivered inside
+normal `RESULT.evidence` as `{ "workflow_plan": <draft> }`. It is not yet a frozen
+validated execution contract. Coordinator gathers genuine planner RESULT and
+review linkage; never fabricate these native envelopes or reference hashes.
 
-`plan_sha256(contract)` hashes the complete v2 plan **excluding `plan_review`**,
-avoiding a circular hash. The review targets the final exact resolved plan; a
-material revision requires fresh review of that new hash. Native handoff hashes
-and freezes the **entire final contract**, including review/resolution linkage.
-These two hashes serve different purposes; do not substitute the plan hash for
-the accepted immutable contract hash in product audits.
+`plan_sha256` hashes v3 complete proposed plan excluding **only** `native_plan`
+and `plan_review`, avoiding circular provenance hashes. V2 excludes only
+`plan_review`. Any material plan change requires review of the exact changed
+plan. `manager plan-freeze --intake-id … --contract …` validates actual native
+planner and reviewer lifecycle and freezes the **whole** final v3 contract hash.
+The complete accepted contract hash, not plan hash, links later audits. See
+[actual native commands](../../../docs/WORKFLOW.md#native-intake-and-startup).
 
 ## Initial split review and reasoned resolution
 
@@ -64,13 +72,13 @@ lifecycle; do not replace it with the report. `native_review` records:
 - `result_sha256`: `core.sha256_hex` of the entire validated native RESULT object
   (canonical JSON object hash, **not** SHA256 of raw file bytes).
 
-Planner discovers/settles this lane through ordinary native watch/events and
-completion review, then retires it **before** offering handoff. The native offer
-checks genuine review evidence, observed controller identity/protected invocation
-history, current preparation
-scope, retired cleanup, acceptance and event settlement. A synthetic valid JSON
-shape alone is not enough. Distinctness is checked against actual planner and
-recipient identities; a task label or auditor-selected identity is insufficient.
+Coordinator discovers/settles both planning lanes through ordinary native
+watch/events and completion review, then retires them **before** plan freeze.
+Native freeze checks actual read-only-product planner/reviewer RESULT linkage,
+observed controller identities/protected invocation history, current preparation
+scope, base revision/cleanliness, retired cleanup, acceptance and event settlement.
+A synthetic valid JSON shape alone is not enough. Distinctness is checked against
+actual gateway, coordinator, planner and reviewer identities—not role labels.
 The reviewer's advice is advisory; accepting delivery of the assigned review is
 not requiring approval of the plan. If review is missing/unavailable, clean up and
 report incomplete rather than inventing evidence or blocking shutdown forever.
@@ -89,11 +97,11 @@ validate_plan_review(contract["plan_review"]["report"], contract,
 ```
 
 This checks typed declarations. It does not create native evidence or prove the
-review happened. Native offer supplies the additional observed lifecycle linkage.
+review happened. Native v3 freeze supplies additional actual observed lifecycle linkage.
 
 ## Exact-revision final audit
 
-Default `harness-outcome-audit/v2` retains `contract_sha256` (the **whole accepted
+The audit record remains `harness-outcome-audit/v2` for v3 contracts and retains `contract_sha256` (the **whole accepted
 contract** hash), `candidate_revision` (full Git object ID),
 `auditor_session_id`, `read_only: true`, `results`, `verdict`, `findings`.
 `results` covers every original outcome **and** every integration criterion
@@ -124,14 +132,14 @@ actual commands/statuses and before/after candidate identity.
 
 ## Integrator repair loop and honest final result
 
-The coordinator owns justified repairs **itself**, not planner ROOT or original
+The coordinator owns justified repairs **itself**, not outer, separate planner or original
 coders. Preserve the accepted immutable original contract. After material changes,
 commit the new revision, rerun **every** outcome and overall criterion, and obtain
 a fresh independent native audit of that exact revision. Retain earlier failed
 reports as history. No old report becomes current merely because the failure was
 fixed or an auditor previously approved a parent revision.
 
-`harness-outcome-final/v2` contains:
+The final record remains `harness-outcome-final/v2` for v3 contracts and contains:
 
 - `schema`, `contract_sha256`, `candidate_revision`, `coordinator_session_id`.
 - `checks`: full original outcome+criterion coverage, using the audit result shape.

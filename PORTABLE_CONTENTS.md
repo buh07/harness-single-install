@@ -7,7 +7,7 @@ Upstream snapshot date: 2026-08-02. Distribution additions: 2026-10-20.
 - Versioned `skills/harness-outcome-workflow/` with bounded outcome assignments,
   coordinator-owned integration/repair and independent whole-result auditing;
   strict workflow/audit contract validators and explicit selector loading.
-  [Workflow documentation](docs/WORKFLOW.md) covers native manager handoff and upgrades.
+  [Workflow documentation](docs/WORKFLOW.md) covers external gateway/native intake, legacy handoff history and upgrades.
 
 - Reusable full-source installation guide (`INSTALL.md`) and pinned upstream
   provenance (`PROVENANCE.md`).
