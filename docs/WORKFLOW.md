@@ -156,7 +156,9 @@ workspace/native home, resume the actual seed ID with an **unmarked** bootstrap:
 
 ```sh
 cd "$WORKSPACE"
-"$CODEX_BIN" exec resume "$COORDINATOR_NATIVE_ID" --json \
+"$CODEX_BIN" exec resume "$COORDINATOR_NATIVE_ID" --json -m "$CODEX_MODEL" \
+  -c "model_reasoning_effort=\"$CODEX_REASONING\"" \
+  -c "service_tier=\"$CODEX_SERVICE_TIER\"" \
   --output-last-message "$EVIDENCE_DIR/coordinator-final.txt" \
   "Your first tool operation must run: cd '$HARNESS_DIR' && '$PYTHON' -B -m orchestrator_harness.operator_launch --json manager intake-accept --intake-id '$INTAKE_ID' --request-sha256 '$REQUEST_SHA256'. After successful acceptance load '$HARNESS_DIR/skills/harness-outcome-workflow/SKILL.md' and execute the entire immutable original request. You own planner/review/coding/audit and shutdown, even if the task is blocked. Do not read files or run another tool before acceptance." \
   > "$EVIDENCE_DIR/coordinator-execution.jsonl"
@@ -253,8 +255,8 @@ planner-as-ROOT explicit `manager handoff-offer`/`handoff-accept` lifecycle is
 **legacy**, not the default v3 external-gateway route. Do not reinterpret those
 records as coordinator-from-intake proof. The [real-provider report](REAL_WORKFLOW_TEST.md)
 is unchanged **v1 Codex/Linux** history, not a test of v2 split review or v3
-external gateway. V2 offline reviewed-plan/repair fixtures and v3 offline role-flow
-fixtures are labeled test doubles, not real model-backed provider E2E. Claude/Qwen
+external gateway. V2 offline reviewed-plan/repair fixtures and [v3 offline role-flow
+fixtures](OUTER_GATEWAY_TEST.md) are labeled test doubles, not real model-backed provider E2E. Claude/Qwen
 have native harness adapters but no Codex `[harness]` selector; their new topology
 must not be claimed provider-tested without actual evidence.
 
