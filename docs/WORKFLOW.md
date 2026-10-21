@@ -81,8 +81,15 @@ python -B -m orchestrator_harness.operator_launch --json manager handoff-accept 
 Do not forge identity environment variables. After successful acceptance, load
 this workflow skill and immutable contract evidence. Acceptance transfers native
 manager authority; it does not rewrite original preparation receipts or create a
-second runtime. Existing owned-work obligations take precedence over bootstrap
-OFF instructions. The planner remains idle until coordinator proves CLOSED;
+second runtime. The bootstrap's OFF selection applies to new unmarked tasks,
+not continuation of the previously marked immutable contract. After genuine
+acceptance, the coordinator executes that entire contract, including **initial
+assignment launches even when no workers existed at transfer**, integration,
+checks, repairs, independent audits and shutdown. It is not limited to existing
+workers or cleanup. An offer or a prompt claiming acceptance grants no authority;
+all native ownership, readiness and permission checks still apply. The unmarked
+hook path remains read-only and never automatically sets up, prepares or reopens
+a runtime. The planner remains idle until coordinator proves CLOSED;
 there is no early Stop exemption. Only the coordinator consumes native manager
 work or performs lifecycle actions after transfer. Never add a custom supervisor,
 retry controller, watcher agent, transcript reader or event relay.

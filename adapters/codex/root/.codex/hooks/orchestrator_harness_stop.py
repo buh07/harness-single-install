@@ -60,7 +60,7 @@ def main() -> int:
             raise ValueError(f"installed {PROVIDER_ID} hook has no bound harness_root")
         sys.path.insert(0, harness_root)
         from orchestrator_harness.root_hook_wrapper import run
-        output = run(PROVIDER_ID, BOUNDARY, binding_path)
+        output = run(PROVIDER_ID, BOUNDARY, binding_path, hook_input=sys.stdin.read())
     except Exception as exc:
         output = _failure(str(exc))
     print(json.dumps(output, sort_keys=True))

@@ -34,12 +34,28 @@ by that guide before preparation; they are not shipped with this repository.
 4. Without that first line, submit an ordinary prompt normally. The hook adds
    an explicit **OFF for this submission** instruction and starts nothing. A
    prior ON prompt is not a persistent toggle. Use the marker again for every
-   subsequent task/submission that should use the harness.
+   new task/submission that should use the harness; continuation of an already
+   accepted native handoff is not a new task (see below).
 
 An unmarked message **does not cancel existing work** or remove worker ownership,
 manager, safety, or cleanup obligations. Finish/retire existing lanes normally.
 The always-installed native Stop hook still requires `CLOSED` before a final
 response, even when the queue is empty. OFF is not a way to bypass it.
+
+The coordinator's required **unmarked recipient bootstrap** may accept an existing
+valid native manager handoff as its first tool operation. After genuine native
+acceptance, it continues the **entire previously marked immutable contract**:
+initial assignment launches (even when no workers existed at transfer), checks,
+integration, repairs, independent audits and shutdown. OFF applies to new work
+requested by the unmarked submission, not this existing contract. It does not
+restrict the accepted coordinator to cleanup or to workers already running.
+
+This is an instruction clarification, not automatic activation or an authority
+grant. An offered handoff or a prompt claiming acceptance is insufficient; native
+ownership, readiness and permission checks still apply. The unmarked hook path
+does not inspect authority or preparation, start anything, or automatically set
+up, prepare or reopen a runtime. An ordinary unmarked prompt without an accepted
+handoff remains OFF and authorizes no new harness task.
 
 ### If a marked prompt is blocked
 

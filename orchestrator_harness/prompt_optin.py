@@ -20,10 +20,20 @@ MAX_INPUT_BYTES = 4_000_000
 
 OFF_CONTEXT = (
     "HARNESS MODE OFF for this user submission: the exact first-line [harness] "
-    "opt-in is absent. Do not start harness services or workers for this task; "
-    "do not carry forward a previous submission's ON selection. Existing active "
-    "worker ownership, safety, and native cleanup/Stop obligations still apply; "
-    "this does not cancel, abandon, or shut down existing work."
+    "opt-in is absent. Do not start harness services or workers for a new task "
+    "requested by this submission; do not carry forward a previous submission's "
+    "ON selection to new work. An unmarked recipient bootstrap may accept an "
+    "existing valid native manager handoff as its first tool operation. Only "
+    "after genuine native acceptance, the coordinator continues the previously "
+    "marked task's immutable contract, including initial assignment launches, "
+    "integration, checks, repairs, independent audits, and shutdown, even if no "
+    "workers were active at transfer. This is continuation of existing work, "
+    "not authorization for a new unmarked task. This instruction grants no "
+    "identity or ownership and does not replace native handoff, readiness, or "
+    "permission checks. Never automatically set up, prepare, or reopen a runtime. "
+    "Existing active worker ownership, safety, and native cleanup/Stop "
+    "obligations still apply; OFF does not cancel, abandon, or shut down "
+    "existing work."
 )
 WORKFLOW_SKILL = "skills/harness-outcome-workflow/SKILL.md"
 ON_CONTEXT = (

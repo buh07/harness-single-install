@@ -187,20 +187,60 @@ def _run_owned(provider_id: str, boundary: str, binding_path: Path) -> dict[str,
     return translate(boundary, decision)
 
 
-def run(provider_id: str, boundary: str, binding_path: Path) -> dict[str, Any]:
+def _codex_hook_identity(provider_id: str, boundary: str, hook_input: str) -> str:
+    """Map Codex's native hook stdin; do not infer other providers' schemas.
+
+    Codex v0.163 hooks/schema.rs defines session_id and hook_event_name for
+    PostToolUseCommandInput and StopCommandInput. This cooperative identity is
+    provided by the native client, not a prepared receipt or a prompt field.
+    """
+    if provider_id != "codex":
+        raise RootHookBindingError("MANAGER_HOOK_INPUT_UNSUPPORTED: native hook identity mapping requires Codex")
+    try:
+        value = json.loads(hook_input)
+    except (ValueError, TypeError) as exc:
+        raise RootHookBindingError("MANAGER_HOOK_INPUT_INVALID: expected native hook JSON object") from exc
+    expected = {"post-tool-use": "PostToolUse", "stop": "Stop"}.get(boundary)
+    if not isinstance(value, dict) or expected is None or value.get("hook_event_name") != expected:
+        raise RootHookBindingError("MANAGER_HOOK_INPUT_INVALID: native hook event differs from installed boundary")
+    # Codex subagent hooks can carry the parent's session_id. They are not a
+    # distinct execution manager and must not inherit that parent's authority.
+    if value.get("agent_id") is not None or value.get("agent_type") is not None:
+        raise RootHookBindingError("MANAGER_HANDOFF_WORKER: subagent hooks cannot operate the manager")
+    native = value.get("session_id")
+    if (not isinstance(native, str) or not native.strip() or native != native.strip()
+            or any(ord(c) < 32 or ord(c) == 127 for c in native)):
+        raise RootHookBindingError("MANAGER_IDENTITY_REQUIRED: native hook session_id is missing or invalid")
+    return native
+
+
+def run(provider_id: str, boundary: str, binding_path: Path, *,
+        hook_input: str | None = None) -> dict[str, Any]:
     """Never deliver manager events to a retired planner; CLOSED still permits exit."""
     try:
         binding = _read_binding(binding_path, provider_id)
         config = load_config(Path(binding["harness_root"]))
         if config.profile == "managed":
             from .setup import read_runtime_state
-            from .manager_ownership import manager_operation
+            from .manager_ownership import manager_operation, _native_hook_identity, read_ownership
             from .shutdown import prove_runtime_closed
             if (read_runtime_state(config.runtime_root) or {}).get("state") == "CLOSED":
                 # Cleanup proof is required even for the retired planner. Do not
                 # append delivery receipts or revive its old ownership here.
                 prove_runtime_closed(config.runtime_root, config.root_workspace, config.harness_root)
                 return {}
+            if hook_input is not None:
+                native = _codex_hook_identity(provider_id, boundary, hook_input)
+                with _native_hook_identity(provider_id, native):
+                    # Legacy prepared roots can have a pinned native identity
+                    # even before a handoff record exists. Keep that check too.
+                    from .root_session import read_root_session
+                    session = read_root_session(config)
+                    if (read_ownership(config, session) is None
+                            and session["native_session_id"] not in (None, native)):
+                        raise RootHookBindingError("ROOT_SESSION_MISMATCH: native hook session differs from prepared binding")
+                    with manager_operation(config):
+                        return _run_owned(provider_id, boundary, binding_path)
             with manager_operation(config):
                 return _run_owned(provider_id, boundary, binding_path)
         return _run_owned(provider_id, boundary, binding_path)

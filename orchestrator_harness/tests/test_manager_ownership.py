@@ -7,6 +7,9 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 import threading
 import unittest
@@ -211,6 +214,137 @@ class ManagerOwnershipTests(unittest.TestCase):
         self.assertEqual({}, root_hook_wrapper.run("codex", "post-tool-use", binding))
         with patch.object(shutdown, "prove_runtime_closed", side_effect=RuntimeError("cleanup unproven")):
             self.assertEqual("block", root_hook_wrapper.run("codex", "stop", binding)["decision"])
+
+    def test_native_hook_stdin_admits_owner_and_rejects_former_owner_without_delivery(self):
+        binding = self.binding()
+        self.accept(self.offer())
+        environment = dict(os.environ)
+        environment.pop("CODEX_THREAD_ID", None)
+        for boundary, event in (("post-tool-use", "PostToolUse"), ("stop", "Stop")):
+            with self.subTest(boundary=boundary), patch.dict(os.environ, environment, clear=True):
+                with patch.object(root_hook_wrapper, "dispatch", return_value={"decision": "ALLOW"}) as dispatch:
+                    self.assertEqual({}, root_hook_wrapper.run("codex", boundary, binding,
+                        hook_input=json.dumps({"session_id": "coordinator", "hook_event_name": event})))
+                    dispatch.assert_called_once()
+                with patch.object(root_hook_wrapper, "dispatch") as dispatch, patch.object(root_hook_wrapper, "append_delivery_history") as delivered:
+                    result = root_hook_wrapper.run("codex", boundary, binding,
+                        hook_input=json.dumps({"session_id": "planner", "hook_event_name": event}))
+                    self.assertIn("MANAGER_NOT_OWNER", result.get("reason", result.get("stopReason", "")))
+                    dispatch.assert_not_called()
+                    delivered.assert_not_called()
+                self.assertNotIn("CODEX_THREAD_ID", os.environ)
+                with self.assertRaisesRegex(ConfigError, "MANAGER_IDENTITY_REQUIRED"):
+                    ownership.observed_native("codex")
+        self.assertEqual(self.original_session, self.session_path.read_bytes())
+
+    def test_native_hook_stdin_delivers_real_queue_only_to_current_owner(self):
+        from orchestrator_harness.manager_queue import promote_event, read_manager_queue
+        binding = self.binding()
+        self.accept(self.offer())
+        event = promote_event(self.fixture.rt, event_type="COMPLETION_REVIEW_REQUIRED",
+            event_class="COMPLETION_REVIEW_REQUIRED", lane_id="unit-lane", run_id="unit-run",
+            summary="unit unresolved review")
+        environment = dict(os.environ)
+        environment.pop("CODEX_THREAD_ID", None)
+        with patch.dict(os.environ, environment, clear=True):
+            output = root_hook_wrapper.run("codex", "post-tool-use", binding,
+                hook_input=json.dumps({"session_id": "coordinator", "hook_event_name": "PostToolUse"}))
+            self.assertIn("hookSpecificOutput", output)
+            delivered = read_manager_queue(self.fixture.rt)["events"][0]
+            self.assertEqual(event["event_id"], delivered["event_id"])
+            self.assertEqual("PENDING", delivered["state"])
+            self.assertEqual(1, len(delivered["delivery_history"]))
+            self.assertEqual(self.fixture.session["session_id"], delivered["delivery_history"][0]["session_id"])
+            receipt_path = self.fixture.manager / ".agent-workspace/root-hook-delivery.jsonl"
+            receipts = receipt_path.read_bytes()
+            result = root_hook_wrapper.run("codex", "post-tool-use", binding,
+                hook_input=json.dumps({"session_id": "planner", "hook_event_name": "PostToolUse"}))
+            self.assertIn("MANAGER_NOT_OWNER", result["stopReason"])
+            self.assertEqual(delivered, read_manager_queue(self.fixture.rt)["events"][0])
+            self.assertEqual(receipts, receipt_path.read_bytes())
+
+    def test_native_hook_stdin_missing_malformed_conflicting_or_subagent_fails_closed(self):
+        binding = self.binding()
+        self.accept(self.offer())
+        environment = dict(os.environ)
+        environment.pop("CODEX_THREAD_ID", None)
+        invalid = ["", "{", "[]", "null", "{}",
+                   json.dumps({"session_id": "coordinator", "hook_event_name": "Stop"}),
+                   *[json.dumps({"session_id": value, "hook_event_name": "PostToolUse"})
+                     for value in (None, 2, "", " ", "coordinator\n", " coordinator", "x\x7f")],
+                   json.dumps({"session_id": "coordinator", "hook_event_name": "PostToolUse", "agent_id": "child"})]
+        with patch.dict(os.environ, environment, clear=True), patch.object(root_hook_wrapper, "dispatch") as dispatch, patch.object(root_hook_wrapper, "append_delivery_history") as delivered:
+            for raw in invalid:
+                with self.subTest(raw=raw):
+                    self.assertIs(False, root_hook_wrapper.run("codex", "post-tool-use", binding, hook_input=raw)["continue"])
+            dispatch.assert_not_called()
+            delivered.assert_not_called()
+        for native in ("planner", ""):
+            with self.subTest(native=native), patch.dict(os.environ, {"CODEX_THREAD_ID": native}), patch.object(root_hook_wrapper, "dispatch") as dispatch:
+                result = root_hook_wrapper.run("codex", "post-tool-use", binding,
+                    hook_input=json.dumps({"session_id": "coordinator", "hook_event_name": "PostToolUse"}))
+                self.assertIn("MANAGER_IDENTITY_CONFLICT", result["stopReason"])
+                dispatch.assert_not_called()
+        with patch.dict(os.environ, {"CODEX_THREAD_ID": "coordinator"}), patch.object(root_hook_wrapper, "dispatch", return_value={"decision": "ALLOW"}):
+            self.assertEqual({}, root_hook_wrapper.run("codex", "post-tool-use", binding,
+                hook_input=json.dumps({"session_id": "coordinator", "hook_event_name": "PostToolUse"})))
+
+    def test_native_hook_stdin_preserves_legacy_pinned_identity(self):
+        binding = self.binding()
+        root_session.bind_native_root_session(self.config, run_id=self.fixture.session["run_id"], session_id=self.fixture.session["session_id"], native_session_id="planner")
+        environment = dict(os.environ)
+        environment.pop("CODEX_THREAD_ID", None)
+        with patch.dict(os.environ, environment, clear=True), patch.object(root_hook_wrapper, "dispatch", return_value={"decision": "ALLOW"}) as dispatch:
+            result = root_hook_wrapper.run("codex", "post-tool-use", binding,
+                hook_input=json.dumps({"session_id": "coordinator", "hook_event_name": "PostToolUse"}))
+            self.assertIn("ROOT_SESSION_MISMATCH", result["stopReason"])
+            dispatch.assert_not_called()
+            self.assertEqual({}, root_hook_wrapper.run("codex", "post-tool-use", binding,
+                hook_input=json.dumps({"session_id": "planner", "hook_event_name": "PostToolUse"})))
+            dispatch.assert_called_once()
+
+    def test_installed_codex_hook_subprocess_consumes_native_stdin(self):
+        binding = self.binding()
+        self.accept(self.offer())
+        hooks = binding.parent / "hooks"
+        hooks.mkdir()
+        source = Path(__file__).resolve().parents[2] / "adapters/codex/root/.codex/hooks"
+        environment = dict(os.environ)
+        environment.pop("CODEX_THREAD_ID", None)
+        # The configured fixture harness contains only private config; code is
+        # loaded from this worktree through the fixture's explicit PYTHONPATH.
+        for filename, event in (("orchestrator_harness_post_tool_use.py", "PostToolUse"),
+                                ("orchestrator_harness_stop.py", "Stop")):
+            installed = hooks / filename
+            shutil.copy2(source / filename, installed)
+            for native in ("coordinator", "planner"):
+                with self.subTest(event=event, native=native):
+                    completed = subprocess.run([sys.executable, "-B", str(installed)],
+                        input=json.dumps({"session_id": native, "hook_event_name": event}),
+                        cwd=self.fixture.manager, env=environment, capture_output=True, text=True, timeout=20)
+                    self.assertEqual(0, completed.returncode, completed.stderr)
+                    result = json.loads(completed.stdout)
+                    reason = result.get("reason", result.get("stopReason", ""))
+                    if native == "planner":
+                        self.assertIn("MANAGER_NOT_OWNER", reason)
+                    else:
+                        self.assertNotIn("MANAGER_IDENTITY", reason)
+                        self.assertNotIn("MANAGER_NOT_OWNER", reason)
+                        if event == "PostToolUse":
+                            self.assertEqual({}, result)
+                        else:
+                            # Current owner still cannot exit an OPEN runtime.
+                            self.assertEqual("block", result["decision"])
+                            self.assertIn("OPEN", result["reason"])
+        with patch.dict(os.environ, {"CODEX_THREAD_ID": "coordinator"}), patch.object(shutdown, "find_harness_root", return_value=self.fixture.harness):
+            with ownership.manager_operation(self.config):
+                self.assertTrue(shutdown.run_shutdown()["ok"])
+        # CLOSED shortcut is independent of stdin but never of cleanup proof.
+        self.assertEqual({}, root_hook_wrapper.run("codex", "stop", binding, hook_input="malformed"))
+        with patch.object(shutdown, "prove_runtime_closed", side_effect=RuntimeError("cleanup unproven")):
+            result = root_hook_wrapper.run("codex", "stop", binding, hook_input="malformed")
+            self.assertEqual("block", result["decision"])
+            self.assertIn("cleanup unproven", result["reason"])
 
     def test_owner_can_recover_after_epoch_marker_removed_during_shutdown(self):
         self.accept(self.offer())

@@ -113,15 +113,46 @@ class PromptOptInTests(unittest.TestCase):
 
     def test_unmarked_off_is_explicit_and_does_not_touch_authority(self) -> None:
         with (patch.object(optin, "load_config") as load,
+              patch.object(optin, "read_root_session") as session,
+              patch.object(optin, "read_ownership") as ownership,
+              patch.object(optin, "resolve_root_session") as resolve,
               patch.object(optin, "read_runtime_state") as state,
+              patch("scripts.prepare_root_launch.validate_prepared_root") as validation,
+              patch("orchestrator_harness.setup.run_setup") as setup,
+              patch("scripts.prepare_root_launch.prepare") as prepare,
               patch("subprocess.Popen") as spawn):
             result = self.call({**self.payload, "prompt": "Explain this file."})
         self.assertEqual(optin.context(optin.OFF_CONTEXT), result)
         self.assertIn("OFF for this user submission", result["hookSpecificOutput"]["additionalContext"])
         self.assertIn("Existing active worker ownership", result["hookSpecificOutput"]["additionalContext"])
         load.assert_not_called()
+        session.assert_not_called()
+        ownership.assert_not_called()
+        resolve.assert_not_called()
         state.assert_not_called()
+        validation.assert_not_called()
+        setup.assert_not_called()
+        prepare.assert_not_called()
         spawn.assert_not_called()
+
+    def test_unmarked_bootstrap_preserves_full_accepted_contract_not_new_work(self) -> None:
+        # Instruction regression, not proof of native acceptance or model behavior.
+        # No runtime exists: OFF must not inspect authority to issue this context.
+        with patch.object(optin, "load_config") as load:
+            result = self.call({**self.payload, "session_id": "recipient-native",
+                "prompt": "Accept the existing native manager handoff as your first tool operation."})
+        self.assertEqual(optin.context(optin.OFF_CONTEXT), result)
+        text = result["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("as its first tool operation", text)
+        self.assertIn("Only after genuine native acceptance", text)
+        self.assertIn("previously marked task's immutable contract", text)
+        self.assertIn("initial assignment launches", text)
+        self.assertIn("integration, checks, repairs, independent audits, and shutdown", text)
+        self.assertIn("even if no workers were active at transfer", text)
+        self.assertIn("not authorization for a new unmarked task", text)
+        self.assertIn("grants no identity or ownership", text)
+        self.assertIn("does not replace native handoff, readiness, or permission checks", text)
+        load.assert_not_called()
 
     def test_on_then_off_has_no_sticky_registry(self) -> None:
         self.mocks()
@@ -289,6 +320,19 @@ class NativeEntryPointTests(unittest.TestCase):
             result = self.invoke(json.dumps(payload).encode(), "--harness-dir", str(SOURCE), "--workspace", str(SOURCE))
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual({}, json.loads(result.stdout))
+
+    def test_unprepared_unmarked_bootstrap_is_read_only_off_not_automatic_setup(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="optin-bootstrap-") as raw:
+            workspace = Path(raw)
+            payload = {"hook_event_name": "UserPromptSubmit", "cwd": raw,
+                       "prompt": "Accept the existing manager handoff, then continue its contract."}
+            result = self.invoke(json.dumps(payload).encode(), "--harness-dir", str(SOURCE),
+                                 "--workspace", raw)
+            self.assertEqual([], list(workspace.iterdir()))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(b"", result.stderr)
+        self.assertEqual(optin.context(optin.OFF_CONTEXT), json.loads(result.stdout))
+        self.assertIn("Never automatically set up, prepare, or reopen a runtime", result.stdout.decode())
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
 """Explicit native-conversation transfer of a prepared manager's authority.
 
 This is cooperative same-user ownership, not a security sandbox: provider-owned
-native identity must be present, and fabricating its environment is unsupported.
-No provider is started and no prepared receipt/session is modified here.
+native identity must be present (tool environment or validated native hook input),
+and fabricating either is unsupported. No provider is started and no prepared receipt/session is modified here.
 """
 from __future__ import annotations
 
 from contextlib import contextmanager
+from contextvars import ContextVar
 import os
 from pathlib import Path
 from typing import Any
@@ -18,6 +19,7 @@ from .records import RecordLock, atomic_write_json, read_record, runtime_admissi
 
 SCHEMA = "manager-ownership/v1"
 _NATIVE = {"codex": "CODEX_THREAD_ID", "claude-code": "CLAUDE_SESSION_ID", "qwen-code": "QWEN_SESSION_ID"}
+_HOOK_NATIVE: ContextVar[tuple[str, str] | None] = ContextVar("manager_hook_native", default=None)
 _FIELDS = {"schema", "run_id", "session_id", "provider_id", "config_identity", "epoch_id",
            "generation", "state", "offer_id", "original_native_session_id", "to_native_session_id",
            "contract", "contract_sha256", "contract_path", "offered_at", "accepted_at", "content_hash"}
@@ -27,9 +29,30 @@ def ownership_path(config: HarnessConfig) -> Path:
     return config.runtime_root / "MANAGER_OWNERSHIP.json"
 
 
+@contextmanager
+def _native_hook_identity(provider: str, native: str):
+    """Scope a validated provider-owned hook input without changing process env.
+
+    This is only used by the installed hook adapter, never an operator option.
+    Context-local state also keeps nested prepared-scope checks consistent.
+    """
+    token = _HOOK_NATIVE.set((provider, native))
+    try:
+        observed_native(provider)  # An inherited contradictory identity is fatal.
+        yield
+    finally:
+        _HOOK_NATIVE.reset(token)
+
+
 def observed_native(provider: str) -> str:
     value = os.environ.get(_NATIVE[provider])
-    if not value or not value.strip() or any(ord(c) < 32 for c in value):
+    hook = _HOOK_NATIVE.get()
+    if hook is not None:
+        if hook[0] != provider or (value is not None and value != hook[1]):
+            raise ConfigError("MANAGER_IDENTITY_CONFLICT: native hook and environment identities differ")
+        value = hook[1]
+    if (not isinstance(value, str) or not value.strip() or value != value.strip()
+            or any(ord(c) < 32 or ord(c) == 127 for c in value)):
         raise ConfigError("MANAGER_IDENTITY_REQUIRED: observed provider-native conversation identity is required")
     return value
 
