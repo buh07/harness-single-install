@@ -6,8 +6,10 @@ version 1. No external skill installation or automatic model discovery is needed
 the hook gives the configured skill's absolute path. The hook selects instructions
 and validates readiness; it does **not** execute this workflow or prove compliance.
 
-See the [real-provider acceptance report](REAL_WORKFLOW_TEST.md) for the tested
-Linux manager PID-namespace limitation and the boundaries not yet confirmed.
+See the [real-provider acceptance report](REAL_WORKFLOW_TEST.md) for the completed
+Codex/Linux coding → integration → independent native audit → CLOSED test, its
+explicit manager permission approval and known continuation limitation. Other
+providers and unexercised paths are not implied by that result.
 
 ## Roles and completion
 
@@ -52,6 +54,13 @@ conversation. Provider-native metadata discovery is not a product tool operation
 A made-up ID, ordinary collaboration subagent ID or lane session is not sufficient.
 If no supported way exists to create/observe that conversation, stop honestly as
 BLOCKED rather than making planner ROOT execute the task.
+
+For the tested Codex `exec` seed/resume method, finish the tool-free recipient
+seed and record its genuine native ID **before fresh preparation opens the
+managed runtime**. Then prepare and start the marked planner. Otherwise ROOT Stop
+obligations can hold the seed client open; never concurrently resume that running
+client. Native app-server idle-thread creation is a different method and was not
+end-to-end tested here. See the [tested startup order](REAL_WORKFLOW_TEST.md#reproducing-the-workflow).
 
 From the harness source root, in the planner's native session:
 

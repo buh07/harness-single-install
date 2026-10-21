@@ -1,16 +1,22 @@
 # Real-provider workflow acceptance test
 
-## Status: blocked before coding (2026-10-21)
+## Status: passed for the tested Codex/Linux path (2026-10-21)
 
-The workflow implementation was published at commit
-`3a19cf56c150993ec252cd737bef9e79149b248f`. The real-provider test below
-**does not confirm the complete coding/integration/audit workflow works**.
-It found a reproducible native Linux manager-environment limitation, which
-provider-free unit/fixture tests had not exercised.
+The real coding/integration/audit workflow completed using harness implementation
+`569da07`. The unified todo-report product is commit
+`8690780166218cc1ba9d2adf1d7523fda0620ff1` in the disposable test repository.
+A distinct native coordinator integrated both coding contributions, checked the
+complete original outcome ledger, obtained an independent native exact-revision
+audit, accepted and retired the lanes, and ran native shutdown to CLOSED with the
+monitor stopped. No product repair was needed after integration.
+
+This confirms the tested successful path, **not every provider, permission mode,
+marked resubmission or repair cycle**. The manager-only broad permission approval
+and known continuation limitation below are part of the result.
 
 ## Task and method
 
-In a fresh disposable Git repository, the original task was:
+The original task in a fresh disposable Git repository was:
 
 > Build a small standard-library Python todo-report CLI. Read a JSON file containing
 > tasks with title:string and done:boolean, output total/completed/open counts,
@@ -18,92 +24,179 @@ In a fresh disposable Git repository, the original task was:
 > invalid task data must fail clearly with nonzero exit and no traceback. Include
 > automated tests and a concise usage example.
 
-The intended decomposition was two bounded implementation assignments:
+The planner recorded the original task, constraints, both assignments, three
+outcomes and five whole-result criteria in the immutable handoff contract:
 
-- **A:** strictly validated `summarize_tasks` API plus focused tests.
-- **B:** CLI, subprocess tests, documentation and example, depending on A's actual
-  integrated implementation rather than a stub.
+- **A:** a strictly validated `summarize_tasks` API and focused tests, with one
+  checkable outcome and bounded file scope.
+- **B:** the CLI, subprocess tests, usage documentation and example, with one
+  checkable outcome. B must start from A's actual integrated implementation, not
+  an invented stub or parallel substitute.
+- **Unified result:** both outcomes remain correct together, the complete test
+  suite and real CLI commands pass, errors are clear, and usage matches behavior.
 
-A separate coordinator was to integrate in its own worktree, recheck every
-outcome, and commission an independent read-only native auditor on the exact
-unified revision. The planner was to stop doing technical work after handoff.
+A distinct integration/execution coordinator owns its own candidate worktree,
+contribution checking, integration, repairs, acceptance, retirement and shutdown.
+The planner performs no technical work after accepted handoff. A fresh native
+product auditor must receive the original task, full outcome ledger and exact
+unified revision, perform independent whole-result checks, and deliver its report
+through native RESULT/events discovered with `watch --until-actionable`.
 
-The test used Codex CLI 0.163.0, real authenticated provider calls, two distinct
-provider-native conversations, and a new private native home and harness/runtime.
-Every role was configured for `gpt-6.1-sol`, reasoning effort `xhigh`, and explicit
-ordinary routing `service_tier="default"`. No premium/fast routing was selected.
-Native client transport handling remained unchanged; no harness provider-relaunch
-loop, fabricated session identity, or mocked worker result was used.
+The test uses Codex CLI 0.163.0, genuine authenticated model calls, distinct native
+manager conversations, private native homes and fresh disposable run state. Roles
+use `gpt-6.1-sol`, reasoning effort `xhigh`, and explicit ordinary routing
+`service_tier="default"`. No premium/fast routing was selected. Native client
+transport handling remains unchanged; no scheduler, relay, provider-relaunch
+loop, fabricated native identity or substitute hand-written worker RESULT is used.
 
-## Actual observations
+## Acceptance evidence
 
 | Boundary | Result |
 | --- | --- |
-| Remote publication and fresh clone | PASS: published revision and portable skill/docs present |
-| Distinct real native coordinator conversation | PASS: authenticated, tool-free READY seed with native session metadata and usage |
-| Real `[harness]` planner submission | PASS: native UserPromptSubmit output selected ON and explicitly named the installed workflow skill |
-| Planner decomposition | PASS: native validation of complete contract, two task cards, three outcomes and five whole-result integration criteria |
-| Genuine native handoff offer | BLOCKED: monitor exact-process readiness failed inside the manager's workspace-write sandbox |
-| Accepted transfer / former-planner rejection | NOT REACHED |
-| Coding lanes / integrated product / independent product audit | NOT REACHED; no product implementation was performed |
-| Failed-attempt cleanup | PASS: native shutdown returned CLOSED with monitor-owner cleanup; exact planner client was interrupted only afterward and its exit proved |
+| Real `[harness]` instruction selection | PASS: native prompt hook selects the installed versioned workflow skill |
+| Complete bounded decomposition | PASS: original task, both assignments, three outcomes and five global criteria recorded |
+| Genuine offer and acceptance | PASS: distinct authenticated native coordinator accepts the snapshotted contract as its first tool operation |
+| First coding lane and integration | PASS: native completion delivered; coordinator passed 12 focused tests and 16 direct cases, then integrated actual A commit `7f802e1` |
+| Dependent second coding lane | PASS: native completion at `8690780`, based on actual A `7f802e1`; coordinator checked scope/API and fast-forward integrated B |
+| Unified integration and real product checks | PASS: exact `8690780`; suite ran 24 tests: 23 passed, one environment-dependent unreadable-file case skipped; all five whole-result criteria satisfied |
+| Independent native exact-revision product audit | PASS: distinct native auditor checked exact `8690780`, reported all three outcomes and five global criteria satisfied, no findings; coordinator validated and accepted the report |
+| Event settlement, retirement and CLOSED proof | PASS: audit completion accepted, all lanes retired; native shutdown returned CLOSED and stopped the monitor |
 
-The prepared host monitor was actually alive with a healthy heartbeat and the
-recorded boot/start identity. The manager tool saw it as absent. A separate
-**provider-free native sandbox diagnostic** reproduced the visibility boundary:
+This table deliberately distinguishes native execution from schema/unit-test
+coverage. CLOSED alone is cleanup evidence, not proof the requested task passed.
+
+An additional independent advisory reviewer checked a fresh clone of exact
+product revision `8690780`: the same 24-test suite ran with 23 passes and one
+capability skip, and 35 extra CLI subprocess checks passed. Those covered seeded
+valid inputs, invalid task data, malformed JSON, invalid UTF-8, missing files and
+directories. It also checked standard-library-only imports, real summary-API use
+and unchanged product source/revision, with no task findings. This is additional
+verification, **not a replacement for the separate native product auditor**.
+
+The genuine native auditor completed at the same exact revision with no findings:
+23 suite tests passed, one unsupported-permission test was skipped, and 107
+independent API checks passed across 143 recorded commands. It verified unchanged product source and HEAD,
+then returned its own report through native completion. A transient
+`PROVIDER_EXITED_NO_RESULT` diagnostic preceded the final valid completion; the
+coordinator handled the diagnostic and continued native waiting, without a
+provider relaunch. The coordinator then validated the exact-revision audit,
+acknowledged and accepted its completion, retired the lane and shut down.
+
+## Earlier attempts and diagnosed fixes
+
+Failures were preserved, diagnosed and closed rather than hidden by a retry loop.
+
+1. **Manager process visibility:** the default Linux workspace-write manager
+   sandbox placed tools in a new PID namespace. A healthy host monitor was
+   invisible to the manager's exact-process lookup, so handoff correctly failed
+   closed. A separate provider-free native sandbox probe reproduced this; it was
+   not evidence of successful coding. Monitor replacement would not fix that
+   visibility boundary.
+2. **Accepted continuation and hook identity:** after explicit user approval of
+   manager-only `danger-full-access`, genuine handoff succeeded. The coordinator
+   correctly refused new workers because the unmarked bootstrap's OFF wording
+   contradicted continuation of an already marked contract. Host-side native
+   hooks also needed to consume the genuine native JSON session identity rather
+   than assume the shell's identity environment was inherited. Commit `84ae3f9`
+   fixes these boundaries without granting new unmarked tasks authority or
+   spoofing identities; independent focused coverage passed 103 tests.
+3. **Unrelated process exit during cleanup:** a real isolated A worker completed
+   its implementation, tests and own RESULT, but cleanup encountered an unrelated
+   process disappearing during a global process snapshot. Commit `569da07`
+   handles exited unrelated entries without weakening exact owned-process
+   validation. Focused independent coverage passed 43 tests with three skips;
+   the actual native owner then force-stopped the affected lane and proved CLOSED.
+
+The completed run used fresh preparation and the one diagnosed manual retry of
+the affected coding assignment, not an automatic continuation loop. Prior source revisions, results, sessions and failed
+run records remain preserved privately. Earlier completed partial work is not
+substituted for the completed run's own coding, integration and native audit evidence.
+
+## Reproducing the workflow
+
+Use [installation and preparation](../QUICK_START.md) and the
+[handoff contract and migration instructions](WORKFLOW.md). Configure explicit
+paths to a disposable product repository, harness installation, private native
+home and persistent runtime storage. Use a genuinely fresh run and frozen source;
+do not reuse receipts or reopen an offered/active epoch as a new task.
+
+The tested Linux manager environment requires host process visibility. The user
+explicitly approved **manager-only** `--sandbox danger-full-access`; this broadens
+filesystem/process access and is not an automatic safe default. Do not silently
+enable it for another installation. Both coding workers and the auditor retain
+native `permission_mode=worker-isolated`; they must not inherit manager bypasses.
+The narrower experimental executor topology considered during diagnosis was not
+used and is not validated here.
+
+The tested startup order matters:
+
+1. Create the disposable product repository and private native home; configure
+   the prompt selector and explicit local paths.
+2. **Before fresh preparation opens the managed runtime**, create the real
+   tool-free recipient seed conversation and record its genuine native session
+   ID. Seeding after OPEN can invoke ROOT Stop obligations and prevent a clean
+   seed exit; do not concurrently resume a still-running client.
+3. Perform genuine fresh-run preparation to install the managed ROOT hooks and
+   produce readiness evidence for the frozen harness/configuration.
+4. Start the marked planner task and offer the full contract to that recipient.
+5. Resume the exact recipient with the unmarked first-tool acceptance bootstrap.
+
+The native client shape is:
 
 ```sh
-# NATIVE_CODEX is the verified native binary; WORKSPACE is a disposable repository.
-"$NATIVE_CODEX" sandbox --permission-profile :workspace --cd "$WORKSPACE" -- \
-  python3 -B -c 'import os; print(os.getpid())'
+# NATIVE_CODEX, PRIVATE_CODEX_HOME and MANAGER_WORKSPACE are explicit local paths.
+# This broad manager mode requires the operator's separate approval.
+CODEX_HOME="$PRIVATE_CODEX_HOME" "$NATIVE_CODEX" exec \
+  --cd "$MANAGER_WORKSPACE" --sandbox danger-full-access \
+  -m gpt-6.1-sol -c 'model_reasoning_effort="xhigh"' \
+  -c 'service_tier="default"' --json '<manager prompt>'
 ```
 
-On the tested Linux installation, that command's Python process had PID 2 in a
-new PID namespace. The harness's exact identity lookup for the outside monitor
-returned unknown, and its liveness lookup returned false. The handoff correctly
-failed closed with:
+That fragment shows the manager permission/model choices, not a standalone
+installation script. Hooks must already be installed, enabled, loaded and trusted
+through the native client's supported mechanism. Using the recipient ID obtained
+before preparation, the planner receives the marked task and uses the normal
+native offer command:
 
-```text
-initialized monitor incarnation is not live; explicitly run health monitor-recover
+```sh
+python -B -m orchestrator_harness.operator_launch --json manager handoff-offer \
+  --to-native-session-id <actual-recipient-session> --contract <contract.json>
 ```
 
-**Do not run monitor recovery merely because of this message when the host
-monitor is healthy.** A replacement monitor would not fix manager PID-namespace
-visibility. Do not weaken identity validation, forge receipts, spoof native
-identities, or treat an OPEN run as complete.
+Resume that exact recipient with an **unmarked** bootstrap whose first tool is:
 
-## Permission boundary and next step
+```sh
+python -B -m orchestrator_harness.operator_launch --json manager handoff-accept \
+  --offer-id <actual-offer> --contract-sha256 <returned-contract-hash>
+```
 
-A manager environment must be able to observe the exact host monitor/controller
-identities and perform authorized native cleanup. The tested default Linux
-workspace-write manager environment did not provide that capability. Filesystem
-write access alone does not establish process visibility.
+After genuine acceptance, the recipient continues the existing marked immutable
+contract, including initial coding launches. It does not gain authority for new
+unmarked tasks. It uses native lane bootstrap/launch, `watch --until-actionable`,
+event acknowledgement and settlement, completion review, retirement and
+`harness shutdown`; it must prove CLOSED rather than merely observe an empty queue.
+Planner ROOT stays idle until that cleanup proof.
 
-An explicitly authorized manager-only `danger-full-access` native session is a
-possible broader environment change, **not a tested fix in this report**. Coding
-and audit workers must retain their scoped isolated permissions. A narrower native 0.163.0 candidate was identified by source inspection: a
-dedicated manager native home can select a stdio executor running
-`codex exec-server --listen stdio --linux-sandbox-pid-namespace=inherit` through
-`environments.toml`. This retains filesystem confinement but permits signaling
-other same-UID processes and introduces an experimental native executor topology.
-The manager must load that native-home configuration (not use
-`--ignore-user-config`); worker invocations must still ignore it and must not
-inherit executor-connection environment overrides. See the exact-release
-[Linux sandbox documentation](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/linux-sandbox/README.md#L90-L118)
-and [native configuration-loading path](https://github.com/openai/codex/blob/rust-v0.163.0/codex-rs/exec/src/lib.rs#L708-L728).
-This candidate **has not been runtime-tested** and also requires explicit approval.
-Its nested-worker isolation, hook association and exact executor cleanup remain
-unproven. Do not add a custom supervisor/relay or silently switch environments.
+## Scope and limits
 
-The failed private attempt was closed and preserved. A corrected run requires
-explicit approval of the selected manager environment, preservation of this
-CLOSED attempt, genuine preparation of a fresh run, and an explicit bounded
-native retry/resume. Then the remaining boundaries in the table must actually
-run before claiming end-to-end success. Existing production preparation, hooks,
-configuration, native sessions and CLOSED runtime were not migrated or reopened.
-
-See [workflow setup and safe run migration](WORKFLOW.md). Full native metadata,
-transcripts and process evidence are private; they are intentionally not shipped
-in this public repository. Earlier unit and provider-free fixture coverage is
-useful regression evidence, not a substitute for the missing real coding/audit
-execution or proof of OS isolation.
+- `[harness]` selects the installed skill and checks readiness. It does not
+  automatically prepare a run, create native manager conversations, schedule
+  work, or mechanically prove model compliance with the selected instructions.
+- The auditor's product-read-only assignment is not a claim of OS-enforced
+  filesystem immutability. Its scoped native worker may write its own protocol
+  report; exact product revision and unchanged product source must be checked.
+- Successful-path evidence does not prove an unexercised repair cycle. Unit and
+  fixture coverage must remain labeled separately from actual model behavior.
+- Known continuation limitation: a later **marked** submission to the active
+  coordinator can return NOT_READY when the host prompt hook has only the native
+  payload session ID, not the shell identity environment. Resume the **exact**
+  authenticated coordinator with an **unmarked continuation of its already
+  accepted immutable contract**. This grants no authority for a new unmarked
+  task. Do not spoof identity variables or reprepare an active epoch. The tested
+  fresh marked planner → unmarked first-tool acceptance path is distinct from
+  this unvalidated marked-resubmission path.
+- This is a Codex/Linux test, not a Claude end-to-end validation or a guarantee
+  for every platform, provider or native CLI version.
+- Private logs, native IDs, transcripts, credentials and machine paths are not
+  part of the public report. Existing production sessions/configuration/runtime
+  are preserved separately, not silently migrated or reopened by this test.
