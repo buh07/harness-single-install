@@ -41,10 +41,12 @@ HARNESS_INPUTS = (
     "orchestrator_harness/root_session.py", "orchestrator_harness/setup.py",
     "orchestrator_harness/launch.py",
     "orchestrator_harness/manager_ownership.py", "orchestrator_harness/workflow_contract.py",
+    "orchestrator_harness/workflow_intake.py",
     "orchestrator_harness/operator_launch.py", "orchestrator_harness/prompt_optin.py",
     "skills/harness-outcome-workflow/SKILL.md",
     "skills/harness-outcome-workflow/references/contract.example.json",
     "skills/harness-outcome-workflow/references/contract.md",
+    "skills/harness-outcome-workflow/references/planning-review.md",
     "scripts/collect_codex_usage.py", "scripts/prepare_root_launch.py",
     "local-config/public-check-policy.json",
 )
