@@ -6,6 +6,9 @@ version 1. No external skill installation or automatic model discovery is needed
 the hook gives the configured skill's absolute path. The hook selects instructions
 and validates readiness; it does **not** execute this workflow or prove compliance.
 
+See the [real-provider acceptance report](REAL_WORKFLOW_TEST.md) for the tested
+Linux manager PID-namespace limitation and the boundaries not yet confirmed.
+
 ## Roles and completion
 
 1. **Planner ROOT** splits the original task once into bounded assignments, each
