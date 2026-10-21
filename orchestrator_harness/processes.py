@@ -1182,8 +1182,10 @@ def linux_process_snapshot() -> ProcessSnapshot:
             processes.append(query.process)
         if not query.complete:
             errors.extend(query.errors)
-        elif query.process is None:
-            errors.append(f"{entry}: process disappeared during observation")
+        # A complete known-PID query with no process proves that entry has
+        # exited during inventory. Omit it rather than poisoning the entire
+        # snapshot; recorded boundary members still require exact exit proof.
+        # Incomplete/unreadable queries above remain fail-closed.
     return ProcessSnapshot(
         complete=not errors,
         processes=tuple(sorted(processes, key=lambda p: p.pid)),

@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from orchestrator_harness import processes
-from orchestrator_harness.models import ProcessInfo, ProcessSnapshot
+from orchestrator_harness.models import ProcessInfo, ProcessQuery, ProcessSnapshot
 from orchestrator_harness.processes import (
     WINDOWS_CIM_SCRIPT,
     WINDOWS_CREATE_NO_WINDOW,
@@ -62,6 +62,83 @@ class DetachedProcessTests(unittest.TestCase):
         self.assertTrue(processes.terminate_process(**identity))
         child.wait(timeout=5)
         self.assertTrue(processes.identity_exit_proven(**identity))
+
+
+class LinuxInventoryRaceTests(unittest.TestCase):
+    """Complete PID absence is benign; unknown owned processes are not."""
+
+    def _inventory(self, queries: dict[int, ProcessQuery]) -> ProcessSnapshot:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for pid in queries:
+                (root / str(pid)).mkdir()
+            with (
+                patch.object(processes, "procfs_root", return_value=root),
+                patch.object(processes, "_linux_boot_time", return_value=datetime(2026, 1, 1, tzinfo=timezone.utc)),
+                patch.object(processes, "_linux_clock_ticks", return_value=100),
+                patch.object(processes, "_linux_process_query", side_effect=lambda pid, **_: queries[pid]),
+            ):
+                return processes.linux_process_snapshot()
+
+    def test_vanished_inventory_entry_does_not_invalidate_live_process(self) -> None:
+        live = ProcessInfo(11, 1, "owned", "owned", datetime(2026, 1, 1, tzinfo=timezone.utc))
+        snapshot = self._inventory({11: ProcessQuery(True, live), 22: ProcessQuery(True, None)})
+        self.assertTrue(snapshot.complete)
+        self.assertEqual((live,), snapshot.processes)
+        self.assertEqual((), snapshot.errors)
+
+    def test_all_entries_can_exit_during_inventory(self) -> None:
+        snapshot = self._inventory({11: ProcessQuery(True, None), 22: ProcessQuery(True, None)})
+        self.assertTrue(snapshot.complete)
+        self.assertEqual((), snapshot.processes)
+        self.assertEqual((), snapshot.errors)
+
+    def test_permission_malformed_and_unknown_queries_remain_incomplete(self) -> None:
+        for error in ("permission denied", "process stat record is incomplete", "identity unavailable"):
+            with self.subTest(error=error):
+                snapshot = self._inventory({11: ProcessQuery(False, None, (error,)), 22: ProcessQuery(True, None)})
+                self.assertFalse(snapshot.complete)
+                self.assertEqual((error,), snapshot.errors)
+
+    def test_real_missing_process_query_is_complete_absence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(processes, "procfs_root", return_value=Path(temporary)):
+                query = processes._linux_process_query(11, boot=datetime(2026, 1, 1, tzinfo=timezone.utc), ticks=100)
+        self.assertTrue(query.complete)
+        self.assertIsNone(query.process)
+        self.assertEqual((), query.errors)
+
+    def test_real_malformed_process_query_remains_unknown(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "11").mkdir()
+            (root / "11" / "stat").write_text("invalid stat", encoding="ascii")
+            with patch.object(processes, "procfs_root", return_value=root):
+                query = processes._linux_process_query(11, boot=datetime(2026, 1, 1, tzinfo=timezone.utc), ticks=100)
+        self.assertFalse(query.complete)
+        self.assertIsNone(query.process)
+        self.assertTrue(query.errors)
+
+    def test_benign_inventory_absence_still_requires_exact_owned_exit(self) -> None:
+        snapshot = self._inventory({22: ProcessQuery(True, None)})
+        record = {
+            "kind": "posix-process-group",
+            "root": {"pid": 11, "creation_time": "2026-01-01T00:00:00Z"},
+            "process_group_id": 11,
+            "session_id": 11,
+            "processes": [{"pid": 11, "creation_time": "2026-01-01T00:00:00Z"}],
+        }
+        for exited, matches, expected in ((True, False, True), (False, True, False), (False, False, False)):
+            with self.subTest(exited=exited, matches=matches):
+                with (
+                    patch.object(processes, "process_snapshot", return_value=snapshot),
+                    patch.object(processes, "identity_exit_proven", return_value=exited) as exit_proof,
+                    patch.object(processes, "identity_matches", return_value=matches),
+                    patch.object(processes, "terminate_process") as terminate,
+                ):
+                    self.assertEqual(expected, processes.process_boundary_is_gone(record))
+                    exit_proof.assert_called_with(11, "2026-01-01T00:00:00Z")
+                    terminate.assert_not_called()
 
 
 class ProcessProviderTests(unittest.TestCase):
