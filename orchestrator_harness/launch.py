@@ -861,7 +861,9 @@ def _maybe_close_epoch(rt: Path, epoch_id: str, *, config=None) -> None:
                 transferred = False
             else:
                 transferred = read_ownership(config, read_root_session(config)) is not None
-            if transferred:
+            from .workflow_intake import read_intake
+            direct = read_intake(config, read_root_session(config))
+            if transferred or (direct is not None and direct["state"] == "ACTIVE"):
                 # A transferred workflow can retire its last coding lane before
                 # starting an independent auditor or another repair/audit pass.
                 # Keep its native epoch and manager scope until explicit native

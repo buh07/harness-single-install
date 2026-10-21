@@ -130,6 +130,11 @@ def bind_native_root_session(config: HarnessConfig, *, run_id: str, session_id: 
         record = read_root_session(config)
         if record["run_id"] != run_id or record["session_id"] != session_id:
             raise ConfigError("ROOT_SESSION_MISMATCH: native observation belongs to another ROOT run")
+        from .workflow_intake import read_intake
+        intake = read_intake(config, record)
+        if intake is not None and (intake["state"] not in {"PENDING", "ACTIVE"}
+                                   or intake["coordinator_session_id"] != native_session_id):
+            raise ConfigError("ROOT_SESSION_MISMATCH: only designated genuine nonterminal intake coordinator may bind")
         if record["native_session_id"] not in (None, native_session_id):
             raise ConfigError("ROOT_SESSION_MISMATCH: native observation cannot replace a known thread")
         if record["native_session_id"] is None:

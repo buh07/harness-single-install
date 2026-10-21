@@ -12,6 +12,7 @@ from typing import Any
 
 LEGACY_CONTRACT_SCHEMA = "harness-outcome-workflow/v1"
 CONTRACT_SCHEMA = "harness-outcome-workflow/v2"
+DIRECT_CONTRACT_SCHEMA = "harness-outcome-workflow/v3"
 LEGACY_AUDIT_SCHEMA = "harness-outcome-audit/v1"
 AUDIT_SCHEMA = "harness-outcome-audit/v2"
 SPLIT_REVIEW_SCHEMA = "harness-split-review/v1"
@@ -80,14 +81,27 @@ def _validate_plan(value: Any) -> dict[str, Any]:
     outcomes may instead map to integration criteria. All references must resolve;
     every outcome must be covered and assignment/outcome links must agree.
     """
-    if not isinstance(value, dict) or value.get("schema") not in {LEGACY_CONTRACT_SCHEMA, CONTRACT_SCHEMA}:
+    if not isinstance(value, dict) or value.get("schema") not in {LEGACY_CONTRACT_SCHEMA, CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}:
         raise ValueError("unsupported workflow contract schema")
     fields = {"schema", "original_prompt", "constraints", "outcomes",
         "assignments", "integration_criteria", "coordinator", "auditor"}
-    if value["schema"] == CONTRACT_SCHEMA:
+    if value["schema"] in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}:
         fields |= {"repository_context", "interfaces", "split_reviewer", "plan_review"}
+    if value["schema"] == DIRECT_CONTRACT_SCHEMA:
+        fields |= {"planner", "intake", "native_plan"}
     contract = _object(value, fields, "contract")
-    if contract["schema"] == CONTRACT_SCHEMA:
+    if value["schema"] == DIRECT_CONTRACT_SCHEMA:
+        _object(contract["planner"], {"provider", "model", "provider_options"}, "planner")
+        _preferences(contract["planner"], "planner")
+        intake = _object(contract["intake"], {"intake_id", "request_sha256", "gateway_session_id", "coordinator_session_id"}, "intake")
+        for key in intake:
+            _text(intake[key], "intake." + key)
+        _text(contract["original_prompt"], "original_prompt")
+        import hashlib
+        if (intake["request_sha256"] != hashlib.sha256(contract["original_prompt"].encode("utf-8")).hexdigest()
+                or intake["gateway_session_id"] == intake["coordinator_session_id"]):
+            raise ValueError("v3 intake must preserve exact original UTF8 and distinct identities")
+    if contract["schema"] in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}:
         _strings(contract["repository_context"], "repository_context")
         _strings(contract["interfaces"], "interfaces", empty=True)
     _text(contract["original_prompt"], "original_prompt")
@@ -142,7 +156,7 @@ def _validate_plan(value: Any) -> dict[str, Any]:
             raise ValueError("assignment/outcome links disagree")
         if not links[item["id"]] and item["id"] not in integration_outcomes:
             raise ValueError("outcome has no implementation or integration coverage")
-    for role in (("coordinator", "auditor", "split_reviewer") if contract["schema"] == CONTRACT_SCHEMA
+    for role in (("coordinator", "auditor", "split_reviewer") if contract["schema"] in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}
                  else ("coordinator", "auditor")):
         _object(contract[role], {"provider", "model", "provider_options"}, role)
         _preferences(contract[role], role)
@@ -157,10 +171,10 @@ def plan_sha256(value: Any) -> str:
     prior review. It is declaration linkage, not a semantic quality guarantee.
     """
     plan = _validate_plan(value)
-    if plan["schema"] != CONTRACT_SCHEMA:
+    if plan["schema"] not in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}:
         raise ValueError("split review requires v2 plan")
     from .core import sha256_hex
-    return sha256_hex({key: item for key, item in plan.items() if key != "plan_review"})
+    return sha256_hex({key: item for key, item in plan.items() if key not in {"plan_review", "native_plan"}})
 
 
 def _findings(value: Any, name: str) -> list[dict[str, Any]]:
@@ -242,6 +256,19 @@ def validate_contract(value: Any) -> dict[str, Any]:
         raise ValueError("split review prepared scope differs from native linkage")
     if not isinstance(native["result_sha256"], str) or not re.fullmatch("[a-f0-9]{64}", native["result_sha256"]):
         raise ValueError("native review RESULT SHA256 required")
+    if contract["schema"] == DIRECT_CONTRACT_SCHEMA:
+        planner = _object(contract["native_plan"], {"epoch_id", "lane_id", "run_id", "result_sha256",
+            "prepared_run_id", "root_session_id", "planner_session_id"}, "native_plan")
+        for key in planner:
+            _text(planner[key], "native_plan." + key)
+        for key in ("epoch_id", "lane_id"):
+            component(planner[key])
+        if (not re.fullmatch("[a-f0-9]{64}", planner["result_sha256"])
+                or planner["planner_session_id"] in {contract["intake"]["gateway_session_id"],
+                    contract["intake"]["coordinator_session_id"], report["reviewer_session_id"]}
+                or report["reviewer_session_id"] in {contract["intake"]["gateway_session_id"], contract["intake"]["coordinator_session_id"]}
+                or any(planner[k] != native[k] for k in ("epoch_id", "prepared_run_id", "root_session_id"))):
+            raise ValueError("v3 planner/reviewer must be distinct and in exact current scope")
     return contract
 
 
@@ -263,21 +290,27 @@ def validate_audit(value: Any, contract: Any, *, candidate_revision: str,
         raise ValueError("actual implementer native sessions required")
     report = _object(value, {"schema", "contract_sha256", "candidate_revision", "auditor_session_id", "read_only",
         "results", "verdict", "findings"}, "audit")
-    expected_schema = AUDIT_SCHEMA if contract["schema"] == CONTRACT_SCHEMA else LEGACY_AUDIT_SCHEMA
+    expected_schema = AUDIT_SCHEMA if contract["schema"] in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA} else LEGACY_AUDIT_SCHEMA
     if report["schema"] != expected_schema or report["candidate_revision"] != candidate_revision:
         raise ValueError("unsupported or stale audit")
     from .core import sha256_hex
     if report["contract_sha256"] != sha256_hex(contract):
         raise ValueError("audit workflow contract hash mismatch")
     auditor = _text(report["auditor_session_id"], "auditor_session_id")
-    if contract["schema"] == CONTRACT_SCHEMA and auditor_session_id is None:
+    if contract["schema"] == DIRECT_CONTRACT_SCHEMA:
+        if coordinator_session_id != contract["intake"]["coordinator_session_id"]:
+            raise ValueError("v3 audit must preserve actual intake coordinator")
+        if auditor in {contract["intake"]["gateway_session_id"], contract["native_plan"]["planner_session_id"],
+                       contract["plan_review"]["report"]["reviewer_session_id"]}:
+            raise ValueError("v3 whole-result auditor must be fresh and separate from prior workflow roles")
+    if contract["schema"] in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA} and auditor_session_id is None:
         raise ValueError("caller-observed auditor native session required for v2")
     if auditor_session_id is not None and auditor != _text(auditor_session_id, "observed auditor"):
         raise ValueError("audit identity differs from caller-observed native session")
     if report["read_only"] is not True or auditor in {*implementer_session_ids, coordinator_session_id, *prior_auditor_session_ids}:
         raise ValueError("auditor must be read-only and independent of implementation/integration")
     statuses = _validate_results(report["results"], contract)
-    if contract["schema"] == CONTRACT_SCHEMA:
+    if contract["schema"] in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}:
         _findings(report["findings"], "audit findings")
     else:
         _strings(report["findings"], "audit findings", empty=True)
@@ -327,7 +360,7 @@ def validate_final_result(value: Any, contract: Any, audit: Any, *, candidate_re
     """
     from .core import sha256_hex
     contract = validate_contract(contract)
-    if contract["schema"] != CONTRACT_SCHEMA or sha256_hex(contract) != expected_contract_sha256:
+    if contract["schema"] not in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA} or sha256_hex(contract) != expected_contract_sha256:
         raise ValueError("final result must preserve the complete accepted v2 contract")
     audit = validate_audit(audit, contract, candidate_revision=candidate_revision,
         implementer_session_ids=implementer_session_ids, coordinator_session_id=coordinator_session_id,

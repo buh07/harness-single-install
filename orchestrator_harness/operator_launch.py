@@ -424,6 +424,22 @@ def _build_parser() -> argparse.ArgumentParser:
     accept_parser.add_argument("--offer-id", required=True)
     accept_parser.add_argument("--contract-sha256", required=True)
 
+    intake_submit = manager_sub.add_parser("intake-submit", help="submit unchanged raw request without manager authority")
+    intake_submit.add_argument("--to-native-session-id", required=True)
+    intake_submit.add_argument("--request-file", required=True)
+    intake_submit.add_argument("--request-sha256", required=True)
+    intake_accept = manager_sub.add_parser("intake-accept", help="native coordinator accepts direct intake")
+    intake_accept.add_argument("--intake-id", required=True)
+    intake_accept.add_argument("--request-sha256", required=True)
+    plan_freeze = manager_sub.add_parser("plan-freeze", help="freeze complete separately planned/reviewed v3 contract")
+    plan_freeze.add_argument("--intake-id", required=True)
+    plan_freeze.add_argument("--contract", required=True)
+    intake_status = manager_sub.add_parser("intake-status", help="read exact registered intake without manager events")
+    intake_status.add_argument("--intake-id", required=True)
+    intake_recover = manager_sub.add_parser("intake-abandon", help="terminal operator cleanup of unclaimed prelaunch intake only")
+    intake_recover.add_argument("--intake-id", required=True)
+    intake_recover.add_argument("--request-sha256", required=True)
+
     lease = subparsers.add_parser("lease", help="exclusive-resource lease commands")
     lease_sub = lease.add_subparsers(dest="lease_command", required=True)
     force_release_parser = lease_sub.add_parser(
@@ -455,6 +471,18 @@ def _build_parser() -> argparse.ArgumentParser:
 def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     from pathlib import Path
     from .manager_ownership import accept_handoff, manager_operation, offer_handoff
+    if args.command == "manager" and args.manager_command in ("intake-submit", "intake-accept", "intake-status", "plan-freeze", "intake-abandon"):
+        from . import workflow_intake
+        config = load_config(find_harness_root())
+        if args.manager_command == "intake-submit":
+            return workflow_intake.submit(config, to_native_session_id=args.to_native_session_id, request_file=Path(args.request_file), request_sha256=args.request_sha256)
+        if args.manager_command == "intake-accept":
+            return workflow_intake.accept(config, intake_id=args.intake_id, request_sha256=args.request_sha256)
+        if args.manager_command == "intake-status":
+            return workflow_intake.status(config, intake_id=args.intake_id)
+        if args.manager_command == "intake-abandon":
+            return workflow_intake.abandon(config, intake_id=args.intake_id, request_sha256=args.request_sha256)
+        return workflow_intake.freeze(config, intake_id=args.intake_id, contract_path=Path(args.contract))
     if args.command == "manager" and args.manager_command in ("handoff-offer", "handoff-accept"):
         config = load_config(find_harness_root())
         if args.manager_command == "handoff-offer":

@@ -177,7 +177,7 @@ class ReviewedWorkflowTests(unittest.TestCase):
             self.assertEqual(['fixture-integrator'],receipt['repair_actors'])
 
 
-def run_offline_repair_fixture(directory: Path):
+def run_offline_repair_fixture(directory: Path, *, contract=None):
     """Real local code/check/Git iteration; identities are fixture role labels only.
 
     This never launches a model, native worker, watch, manager or provider. The
@@ -191,7 +191,7 @@ def run_offline_repair_fixture(directory: Path):
     git('init','-q');git('config','user.name','Offline workflow fixture');git('config','user.email','fixture@example.invalid')
     source=product/'normalize.py';source.write_text('def normalize(words):\n    return [word.strip() for word in words if word.strip()]\n')
     git('add','normalize.py');git('commit','-qm','Fixture coding contribution')
-    c=reviewed_contract();accepted_hash=sha256_hex(c)
+    c=deepcopy(contract) if contract is not None else reviewed_contract();accepted_hash=sha256_hex(c)
     def check(revision,identity):
         report=audit(c,revision,identity)
         checks=[('outcome',"from normalize import normalize; assert normalize([' a ',' ',' b ']) == ['a','','b']"),

@@ -1,7 +1,7 @@
-"""Read-only, explicit Codex UserPromptSubmit selection for one managed ROOT.
+"""Explicit newest-submission selection and native raw gateway registration.
 
-This is a native hook, not a launcher or workflow enforcement engine. No prompt
-or mode receipt is persisted; each submission independently selects ON or OFF.
+Unmarked submissions are read-only OFF. Marked submissions register one exact
+native raw request after readiness; never a mode toggle, manager or launcher.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ OFF_CONTEXT = (
     "opt-in is absent. Do not start harness services or workers for a new task "
     "requested by this submission; do not carry forward a previous submission's "
     "ON selection to new work. An unmarked recipient bootstrap may accept an "
-    "existing valid native manager handoff as its first tool operation. Only "
+    "existing valid native manager handoff or direct intake as its first tool operation. Only "
     "after genuine native acceptance, the coordinator continues the previously "
     "marked task's immutable contract, including initial assignment launches, "
     "integration, checks, repairs, independent audits, and shutdown, even if no "
@@ -37,40 +37,24 @@ OFF_CONTEXT = (
 )
 WORKFLOW_SKILL = "skills/harness-outcome-workflow/SKILL.md"
 ON_CONTEXT = (
-    "HARNESS MODE ON for this user submission only. The exact first-line "
-    "[harness] marker selected the task following it, and existing Codex ROOT "
-    "preparation passed read-only validation. Explicitly load and follow the "
-    "configured harness-outcome-workflow v2 skill, plus AGENTS.md, "
-    "QUICK_RULES.md, QUICK_START.md and local-config/INSTALLATION.md. For coding "
-    "work, planner ROOT proposes useful bounded assignments with one checkable "
-    "outcome each, commissions an independent product-read-only native split "
-    "review covering the whole original request/ledger/context/interfaces, and "
-    "reasons about its advice before freezing the exact reviewed v2 plan. Settle "
-    "and retire that ordinary review lane before handoff; do not maximize lanes "
-    "or pretend dependency-bound work is independent. Planner hands off the complete original prompt, constraints, "
-    "all assignments and global outcome ledger to a distinct native integration/"
-    "execution coordinator using supported manager handoff. Do not pretend a "
-    "coding lane is a manager or invent a native session identity. After accepted "
-    "handoff planner ROOT does no checking, integration, repair delegation or "
-    "lifecycle work; the coordinator owns these duties, unified integration and "
-    "repairs, independent read-only exact-candidate auditing and native shutdown. "
-    "The coordinator and fresh independent auditor cycle directly through native "
-    "lane completion events/watch until ALL original outcomes and overall task "
-    "hold on one candidate or are honestly blocked. Integrator repairs ITSELF; "
-    "every candidate change invalidates old audits, requires rerunning ALL "
-    "original checks and a fresh independent auditor/session. Reasoned owner "
-    "dispositions, not reviewer PASS, decide advisory criticisms; never weaken "
-    "outcomes, report partial/stale success or confuse CLOSED with completion. "
-    "Use explicit authorized provider preferences and isolated worktrees; generic "
-    "Codex subagents do not replace native coding lanes. For noncoding requests, "
-    "answer without fabricating coding lanes or a handoff. Do not add runners, "
-    "supervisors, relays, retry controllers or automatic setup/preparation. "
-    "Preserve unrelated work, storage constraints and failures. Unavailable "
-    "handoff capabilities or permissions mean BLOCKED, not planner fallback. "
-    "Existing ownership and cleanup duties remain until transfer succeeds; the "
-    "former planner remains idle until CLOSED without a Stop bypass. ON is "
-    "per-submission, not persistent. Instruction selection/readiness does not "
-    "prove workflow compliance, successful coding or provider isolation."
+    "HARNESS MODE ON for this user submission only. Explicitly load the "
+    "configured harness-outcome-workflow v3 skill. You are the OUTER GATEWAY, "
+    "completely outside planning, coding, integration, reviewing, repair routing, "
+    "native manager events/watch and cleanup. Submit the ORIGINAL user prompt "
+    "unchanged, INCLUDING [harness], exact whitespace and line endings, through "
+    "manager intake-submit to the genuinely preseeded distinct coordinator. "
+    "Do not resolve/bind yourself as prepared ROOT, interpret/decompose the task, "
+    "or use the ROOT usage collector for yourself. The actual separate native "
+    "coordinator must accept as its first tool operation, then owns separate "
+    "planner and independent split-review lanes, all coding lanes, integration, "
+    "self-repairs, fresh exact-revision whole-result audits and native shutdown. "
+    "Relay its final response unchanged. After exact native acceptance you may "
+    "yield without claiming task completion. Missing real native creation/resume "
+    "capabilities or permissions mean BLOCKED, never a planner/manager fallback. "
+    "[harness] selects instructions, not a provider launcher or semantic proof. "
+    "Do not start clients/services, prepare/reopen a runtime or change global "
+    "permissions automatically. Follow explicit operator bootstrap prerequisites. "
+    "Uncertain or pending ownership cannot be treated as confirmed."
 )
 
 PREPARATION_GUIDANCE = (
@@ -177,12 +161,23 @@ def evaluate(payload: object, *, harness_dir: Path, workspace: Path) -> dict[str
         session = read_root_session(config)
         if session["provider_id"] != "codex":
             raise OptInError("HARNESS_OPTIN_PROVIDER_MISMATCH: this workspace is not prepared for Codex ROOT.")
+        if payload.get("agent_id") is not None or payload.get("agent_type") is not None:
+            raise OptInError("HARNESS_OPTIN_IDENTITY_MISMATCH: nested native clients are not gateways.")
+        from .manager_ownership import _not_worker
+        from .workflow_intake import read_intake
+        _not_worker()
+        intake = read_intake(config, session)
         ownership = read_ownership(config, session)
-        effective_native = (ownership["to_native_session_id"]
-                            if ownership and ownership["state"] == "ACTIVE"
-                            else session["native_session_id"])
-        _native_identity(payload, {**session, "native_session_id": effective_native})
-        resolve_root_session(config, provider_id="codex")
+        # Saved v1/v2 workflows keep their native manager semantics. Fresh
+        # marked work selects an external gateway and never resolves ROOT.
+        if ownership is not None:
+            raise OptInError("HARNESS_OPTIN_LEGACY_RUN: continue the saved accepted v1/v2 contract unmarked with its manager duties intact; new v3 gateway work requires fresh preparation.")
+        if intake is not None and intake["state"] == "ACTIVE":
+            raise OptInError("HARNESS_OPTIN_EXISTING_RUN: coordinator already owns this immutable request; do not relaunch it. Use unmarked status/final relay, or fresh preparation for a new task.")
+        expected = intake["gateway_session_id"] if intake is not None else None
+        _native_identity(payload, {**session, "native_session_id": expected})
+        if payload["session_id"] == session["native_session_id"] or (intake is not None and payload["session_id"] == intake["coordinator_session_id"]):
+            raise OptInError("HARNESS_OPTIN_IDENTITY_MISMATCH: coordinator continues accepted intake unmarked; it is not the outer gateway.")
         # Do not enter the native validator's locks for an absent/CLOSED
         # runtime; it must never become a setup path for an unmarked task.
         state = read_runtime_state(config.runtime_root)
@@ -193,7 +188,19 @@ def evaluate(payload: object, *, harness_dir: Path, workspace: Path) -> dict[str
         if (prepared["root_session_id"] != session["session_id"]
                 or prepared["native_session_id"] != session["native_session_id"]):
             raise OptInError("HARNESS_OPTIN_IDENTITY_MISMATCH: ROOT binding changed during validation.")
-        return on_context(harness_dir, workspace)
+        from .manager_ownership import _native_hook_identity
+        from .workflow_intake import register_gateway
+        with _native_hook_identity("codex", payload["session_id"]):
+            registered = register_gateway(config, session, native=payload["session_id"], prompt=payload["prompt"])
+        result = on_context(harness_dir, workspace)
+        result["hookSpecificOutput"]["additionalContext"] += (
+            "\nExact native raw request registered without manager authority; intake_id: "
+            + registered["intake_id"])
+        import hashlib
+        result["hookSpecificOutput"]["additionalContext"] += (
+            "\nOriginal submission UTF8 SHA256 (pass exactly to intake-submit --request-sha256): "
+            + hashlib.sha256(payload["prompt"].encode("utf-8")).hexdigest())
+        return result
     except OptInError as exc:
         return {"decision": "block", "reason": f"{exc} {PREPARATION_GUIDANCE}"}
     except Exception:

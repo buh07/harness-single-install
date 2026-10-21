@@ -31,7 +31,7 @@ class PromptOptInTests(unittest.TestCase):
             "session_id": "logical-root", "native_session_id": "native-root"}
         self.prepared = {"root_session_id": "logical-root", "native_session_id": "native-root"}
         self.payload = {"hook_event_name": "UserPromptSubmit", "cwd": str(self.workspace),
-            "session_id": "native-root", "turn_id": "native-turn",
+            "session_id": "native-gateway", "turn_id": "native-turn",
             "prompt": "[harness]\nImplement the bounded fixture task."}
         environment = patch.dict(os.environ, {}, clear=True)
         environment.start()
@@ -51,6 +51,7 @@ class PromptOptInTests(unittest.TestCase):
         resolve = stack.enter_context(patch.object(optin, "resolve_root_session", return_value=("logical-root", "codex")))
         state = stack.enter_context(patch.object(optin, "read_runtime_state", return_value={"state": "OPEN"}))
         validation = stack.enter_context(patch("scripts.prepare_root_launch.validate_prepared_root", return_value=self.prepared))
+        stack.enter_context(patch("orchestrator_harness.workflow_intake.register_gateway", return_value={"intake_id":"fixture-intake"}))
         return SimpleNamespace(load=load, session=session, resolve=resolve, state=state, validation=validation)
 
     def assert_blocked(self, result, code=None):
@@ -59,31 +60,30 @@ class PromptOptInTests(unittest.TestCase):
         if code:
             self.assertIn(code, result["reason"])
 
-    def test_on_explicitly_selects_configured_portable_skill(self) -> None:
-        self.mocks()
-        result = self.call()["hookSpecificOutput"]["additionalContext"]
-        self.assertIn(str(self.harness / "skills/harness-outcome-workflow/SKILL.md"), result)
-        self.assertIn("harness-outcome-workflow v2", result)
-        self.assertIn("independent product-read-only native split", result)
-        self.assertIn("Integrator repairs ITSELF", result)
-        self.assertIn("For noncoding requests", result)
-        self.assertIn("Instruction selection/readiness does not", result)
+    def expected_on(self, payload=None):
+        import hashlib
+        result=optin.on_context(self.harness,self.workspace)
+        result["hookSpecificOutput"]["additionalContext"] += (
+            "\nExact native raw request registered without manager authority; intake_id: fixture-intake"
+            "\nOriginal submission UTF8 SHA256 (pass exactly to intake-submit --request-sha256): "
+            +hashlib.sha256((payload or self.payload)["prompt"].encode("utf-8")).hexdigest())
+        return result
 
-    def test_active_coordinator_payload_replaces_prepared_native_identity(self) -> None:
-        self.mocks()
-        with patch.object(optin, "read_ownership", return_value={
-                "state": "ACTIVE", "to_native_session_id": "native-coordinator"}):
-            self.assertEqual(optin.on_context(self.harness, self.workspace), self.call({
-                **self.payload, "session_id": "native-coordinator"}))
-            self.assert_blocked(self.call(), "IDENTITY_MISMATCH")
+    def test_on_explicitly_selects_configured_portable_gateway_skill(self):
+        mocks=self.mocks()
+        result=self.call()["hookSpecificOutput"]["additionalContext"]
+        self.assertIn(str(self.harness/"skills/harness-outcome-workflow/SKILL.md"),result)
+        self.assertIn("harness-outcome-workflow v3",result)
+        self.assertIn("OUTER GATEWAY",result)
+        self.assertIn("completely outside planning",result)
+        self.assertIn("exact whitespace and line endings",result)
+        mocks.resolve.assert_not_called()
 
-    def test_offered_handoff_does_not_change_prompt_authority(self) -> None:
+    def test_saved_active_or_offered_legacy_manager_is_not_relabelled_gateway(self):
         self.mocks()
-        with patch.object(optin, "read_ownership", return_value={
-                "state": "OFFERED", "to_native_session_id": "native-coordinator"}):
-            self.assertEqual(optin.on_context(self.harness, self.workspace), self.call())
-            self.assert_blocked(self.call({**self.payload, "session_id": "native-coordinator"}),
-                                "IDENTITY_MISMATCH")
+        for state in ("ACTIVE","OFFERED"):
+            with patch.object(optin,"read_ownership",return_value={"state":state,"to_native_session_id":"native-coordinator"}):
+                self.assert_blocked(self.call(),"LEGACY_RUN")
 
     def test_exact_marker_truth_table(self) -> None:
         cases = {
@@ -158,7 +158,7 @@ class PromptOptInTests(unittest.TestCase):
 
     def test_on_then_off_has_no_sticky_registry(self) -> None:
         self.mocks()
-        self.assertEqual(optin.on_context(self.harness, self.workspace), self.call())
+        self.assertEqual(self.expected_on(), self.call())
         self.assertEqual(optin.context(optin.OFF_CONTEXT), self.call({**self.payload, "prompt": "Ordinary next task."}))
         self.assertEqual([], list(self.workspace.iterdir()))
 
@@ -185,16 +185,17 @@ class PromptOptInTests(unittest.TestCase):
         with (patch("orchestrator_harness.setup.run_setup") as setup,
               patch("scripts.prepare_root_launch.prepare") as prepare,
               patch("subprocess.Popen") as spawn):
-            self.assertEqual(optin.on_context(self.harness, self.workspace), self.call())
+            self.assertEqual(self.expected_on(), self.call())
         mocks.validation.assert_called_once_with(self.harness, self.workspace, "prepared-run", provider_id="codex")
-        mocks.resolve.assert_called_once_with(self.config, provider_id="codex")
+        mocks.resolve.assert_not_called()
         setup.assert_not_called()
         prepare.assert_not_called()
         spawn.assert_not_called()
 
     def test_crlf_marker_accepts_valid_read_only_preparation(self) -> None:
         self.mocks()
-        self.assertEqual(optin.on_context(self.harness, self.workspace), self.call({**self.payload, "prompt": "[harness]\r\nTask"}))
+        payload={**self.payload,"prompt":"[harness]\r\nTask"}
+        self.assertEqual(self.expected_on(payload), self.call(payload))
 
     def test_missing_closed_or_shutting_down_runtime_rejects(self) -> None:
         mocks = self.mocks()
@@ -248,7 +249,7 @@ class PromptOptInTests(unittest.TestCase):
 
     def test_wrong_prepared_native_session_rejects(self) -> None:
         mocks = self.mocks()
-        self.assert_blocked(self.call({**self.payload, "session_id": "other-native"}), "IDENTITY_MISMATCH")
+        self.assert_blocked(self.call({**self.payload, "session_id": "native-root"}), "IDENTITY_MISMATCH")
         mocks.validation.assert_not_called()
 
     def test_all_inherited_logical_and_native_identities_checked(self) -> None:
@@ -266,21 +267,22 @@ class PromptOptInTests(unittest.TestCase):
 
     def test_matching_inherited_identity_accepts(self) -> None:
         self.mocks()
-        with patch.dict(os.environ, {"CODEX_THREAD_ID": "native-root", "HARNESS_ROOT_SESSION_ID": "logical-root",
+        with patch.dict(os.environ, {"CODEX_THREAD_ID": "native-gateway", "HARNESS_ROOT_SESSION_ID": "logical-root",
                                     "HARNESS_SESSION_ID": "logical-root", "HARNESS_BINDING_ID": "codex"}):
-            self.assertEqual(optin.on_context(self.harness, self.workspace), self.call())
+            self.assertEqual(self.expected_on(), self.call())
 
     def test_unbound_native_session_is_not_mutated_or_claimed_as_ownership(self) -> None:
         self.mocks()
         self.session["native_session_id"] = None
         self.prepared["native_session_id"] = None
-        self.assertEqual(optin.on_context(self.harness, self.workspace), self.call())
+        self.assertEqual(self.expected_on(), self.call())
         self.assertIsNone(self.session["native_session_id"])
 
     def test_resolver_failure_and_changed_binding_reject(self) -> None:
         mocks = self.mocks()
         mocks.resolve.side_effect = ValueError("mismatch")
-        self.assert_blocked(self.call(), "NOT_READY")
+        self.assertEqual(self.expected_on(),self.call())
+        mocks.resolve.assert_not_called()
         mocks.resolve.side_effect = None
         self.prepared["root_session_id"] = "other"
         self.assert_blocked(self.call(), "IDENTITY_MISMATCH")

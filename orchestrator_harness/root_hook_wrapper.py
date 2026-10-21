@@ -236,6 +236,9 @@ def run(provider_id: str, boundary: str, binding_path: Path, *,
                     # even before a handoff record exists. Keep that check too.
                     from .root_session import read_root_session
                     session = read_root_session(config)
+                    from .workflow_intake import gateway_boundary
+                    if gateway_boundary(config, session, native, boundary):
+                        return {}
                     if (read_ownership(config, session) is None
                             and session["native_session_id"] not in (None, native)):
                         raise RootHookBindingError("ROOT_SESSION_MISMATCH: native hook session differs from prepared binding")

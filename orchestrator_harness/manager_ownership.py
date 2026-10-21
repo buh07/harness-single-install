@@ -105,15 +105,26 @@ def read_ownership(config: HarnessConfig, session: dict[str, Any]) -> dict[str, 
 def require_manager_owner(config: HarnessConfig, session: dict[str, Any] | None = None) -> dict[str, Any] | None:
     if config.profile != "managed":
         return None
+    from .workflow_intake import intake_path, read_intake
     if session is None:
         from .root_session import read_root_session
         # Preserve legacy unprepared setup behavior, but never ignore an existing
         # ownership record when preparation is missing or invalid.
         try:
-            ownership_path(config).lstat()
+            intake_path(config).lstat()
         except FileNotFoundError:
-            return None
+            try:
+                ownership_path(config).lstat()
+            except FileNotFoundError:
+                return None
         session = read_root_session(config)
+    intake = read_intake(config, session)
+    if intake is not None:
+        _not_worker()
+        if (intake["state"] != "ACTIVE"
+                or observed_native(session["provider_id"]) != intake["coordinator_session_id"]):
+            raise ConfigError("MANAGER_NOT_OWNER: only the accepted native intake coordinator may operate")
+        return intake
     value = read_ownership(config, session)
     if value is not None:
         expected = value["to_native_session_id"] if value["state"] == "ACTIVE" else value["original_native_session_id"]
@@ -182,8 +193,8 @@ def _require_native_plan_review(config: HarnessConfig, session: dict[str, Any],
     by unchanged base commit/clean result plus the assignment, not OS immutability.
     """
     from datetime import datetime
-    from .workflow_contract import CONTRACT_SCHEMA, validate_plan_review
-    if contract["schema"] != CONTRACT_SCHEMA:
+    from .workflow_contract import CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA, validate_plan_review
+    if contract["schema"] not in {CONTRACT_SCHEMA, DIRECT_CONTRACT_SCHEMA}:
         return  # Saved v1 workflows retain their historical contract.
     from .epochs import epoch_dir
     from .lanes import read_lane, retained_lanes
@@ -259,10 +270,16 @@ def offer_handoff(config: HarnessConfig, *, to_native_session_id: str, contract_
     from .root_session import read_root_session, resolve_root_session
     from .workflow_contract import validate_contract
     contract = validate_contract(read_json(contract_path))
+    from .workflow_contract import DIRECT_CONTRACT_SCHEMA
+    if contract["schema"] == DIRECT_CONTRACT_SCHEMA:
+        raise ConfigError("MANAGER_HANDOFF_CONTRACT: v3 requires genuine direct intake and native plan-freeze, not legacy transfer")
     if not isinstance(to_native_session_id, str) or not to_native_session_id.strip() or any(ord(c) < 32 for c in to_native_session_id):
         raise ConfigError("MANAGER_HANDOFF_TARGET: a distinct native conversation identity is required")
     with RecordLock(config.runtime_root / "MANAGER_OPERATION.json"), runtime_admission_lock(config.runtime_root):
         session = read_root_session(config)
+        from .workflow_intake import read_intake
+        if read_intake(config, session) is not None:
+            raise ConfigError("MANAGER_HANDOFF_EXISTS: direct intake cannot become a legacy handoff")
         resolve_root_session(config)
         _not_worker()
         original = observed_native(session["provider_id"])
