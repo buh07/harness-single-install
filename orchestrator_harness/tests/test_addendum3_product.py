@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-from orchestrator_harness import controller, git_source, leases, manager_queue, monitor, review, scan_watch, setup
+from orchestrator_harness import activity_log, bootstrap, controller, git_source, leases, manager_queue, monitor, review, scan_watch, setup
 from orchestrator_harness.controller import ProviderExecution
 from orchestrator_harness.core import content_hash, iso_utc
 from orchestrator_harness.epochs import CURRENT_EPOCH_SCHEMA, MANAGER_QUEUE_SCHEMA, lane_record_dir
@@ -35,6 +35,16 @@ class Addendum3ProductTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.runtime = Path(self.temp.name) / "runtime"
+        # These aliases normally resolve the installed harness configuration.
+        # Keep real diagnostic writes, but confine this fixture's prompt and
+        # lifecycle traces to its disposable runtime, never the user's runtime.
+        def append_fixture_detail(event: str, **details: object) -> Path:
+            return activity_log.append_detail(self.runtime, event, **details)
+
+        for module in (bootstrap, controller):
+            detail = patch.object(module, "append_current_detail", side_effect=append_fixture_detail)
+            detail.start()
+            self.addCleanup(detail.stop)
         self.controller_identity = controller.processes.process_identity(os.getpid())
         self.assertIsNotNone(self.controller_identity)
         atomic_write_json(
@@ -697,6 +707,37 @@ class Addendum3ProductTests(unittest.TestCase):
 
 
 
+    def test_fixture_detail_logging_never_uses_configured_runtime(self) -> None:
+        external = Path(self.temp.name) / "configured-runtime"
+        external.mkdir()
+        sentinel = external / "preserved.log"
+        sentinel.write_bytes(b"unrelated runtime remains unchanged\n")
+        lane = self._lane()
+        lane["controller_events_path"] = str(self.runtime / "controller.events.jsonl")
+        with patch(
+            "orchestrator_harness.config.load_config",
+            return_value=SimpleNamespace(runtime_root=external),
+        ) as configured:
+            bootstrap._write_worker_prompt(
+                Path(str(lane["worktree_path"])),
+                {"task": "fixture logging", "acceptance_criteria": ["private trace"],
+                 "deliverables": ["fixture log"],
+                 "reason_for_acceptance_and_deliverables": "verify fixture isolation"},
+                managed=False,
+            )
+            controller._append_event(lane, "provider_started", "mock provider only")
+        configured.assert_not_called()
+        self.assertEqual([sentinel], list(external.iterdir()))
+        self.assertEqual(b"unrelated runtime remains unchanged\n", sentinel.read_bytes())
+        for path in (
+            activity_log.detail_log_path(self.runtime),
+            activity_log.important_log_path(self.runtime),
+        ):
+            rows = read_jsonl(path)
+            self.assertEqual(["prompt.root_to_worker", "worker.lifecycle"],
+                             [row["event"] for row in rows])
+            self.assertEqual("provider_started", rows[-1]["worker_event"])
+
     def test_run_provider_passes_saved_session_and_resume_to_binding(self) -> None:
         worktree = self.runtime / "provider-wiring-worktree"
         workspace = worktree / ".agent-workspace"
@@ -803,6 +844,10 @@ class Addendum3ProductTests(unittest.TestCase):
             child.resume.assert_not_called()
         self.assertEqual(tuple(expected_argv), execution.argv)
         self.assertEqual("saved-native-session", execution.session_id)
+        rows = read_jsonl(activity_log.detail_log_path(self.runtime))
+        self.assertTrue(any(row["event"] == "prompt.root_to_worker" for row in rows))
+        self.assertTrue(any(row["event"] == "worker.lifecycle"
+                            and row["worker_event"] == "provider_started" for row in rows))
 
     def test_saved_session_does_not_trigger_an_automatic_relaunch(self) -> None:
         observed = self._run_candidate_correction_boundary(valid_on_second=True)

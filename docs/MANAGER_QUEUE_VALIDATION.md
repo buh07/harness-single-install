@@ -92,7 +92,16 @@ own separate scope and is not evidence for these changes.
 
 Use a private disposable **Git checkout** of the revision under test and an owned
 temporary directory on the target filesystem. Lifecycle tests that inspect Git
-provenance need real repository metadata, not just a copied source tree. Keep native clients off `PATH` when running offline fixtures; use a
+provenance need real repository metadata, not just a copied source tree.
+Prefer a disposable checkout over executing tests in a configured installation:
+legacy fixture logging can resolve the installation's live diagnostic destination.
+The provider-binding fixture now explicitly captures its implicit prompt/lifecycle
+logging under its private runtime; this test-only isolation fix does not change
+live logging behavior. During installed validation before that fixture correction,
+two diagnostic rows were appended to each of two existing monitor logs. Their
+historical byte prefixes were verified unchanged and all rows preserved; runtime
+state and configuration were not changed. This deviation is not described as
+byte-for-byte preservation of every production log. Keep native clients off `PATH` when running offline fixtures; use a
 private `HOME` and `CODEX_HOME`. Do not point fixtures at live runtime records.
 
 ```sh
