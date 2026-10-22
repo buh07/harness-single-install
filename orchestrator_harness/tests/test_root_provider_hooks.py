@@ -94,10 +94,10 @@ class RootHookWrapperTests(unittest.TestCase):
         with (
             patch.dict(os.environ, {"HARNESS_EVENT_ID": "event-1"}),
             patch.object(wrapper, "dispatch", return_value={"decision": "ALLOW"}),
-            patch.object(wrapper, "append_delivery_history") as delivery,
+            patch.object(wrapper, "append_delivery_history", return_value=True) as delivery,
         ):
             self.assertEqual({}, wrapper.run("codex", "post-tool-use", self.binding))
-        delivery.assert_called_once_with(runtime, "event-1", session_id=self.fixture.session["session_id"], binding_id="codex")
+        delivery.assert_called_once_with(runtime, "event-1", session_id=self.fixture.session["session_id"], binding_id="codex", provider_id="codex", queue_id=self.fixture.epoch["queue_id"])
         receipt = json.loads(
             (self.workspace / ".agent-workspace" / "root-hook-delivery.jsonl")
             .read_text(encoding="utf-8")
@@ -134,6 +134,29 @@ class RootHookWrapperTests(unittest.TestCase):
         watched = self.fixture.command("watch", "--until-actionable", "--timeout", "0s")
         self.assertEqual("WATCH_TIMEOUT", json.loads(watched.stdout)["code"])
         self.assertEqual("ACKNOWLEDGED", read_manager_queue(self.fixture.rt)["events"][0]["state"])
+
+    def test_repeated_ack_hook_and_stale_terminal_env_do_not_grow_receipts(self) -> None:
+        from orchestrator_harness.manager_queue import promote_event, acknowledge_event, close_event, read_manager_queue
+        from orchestrator_harness.epochs import manager_queue_path
+        event = promote_event(self.fixture.rt, event_type="LANE_STATUS_CHANGED", lane_id="lane", run_id="run", summary="notice")
+        acknowledge_event(self.fixture.rt, event["event_id"], root_session_id=self.fixture.session["session_id"], binding_id="codex")
+        with patch.object(wrapper, "dispatch", return_value={"decision": "NOTICE", "notice": {"message": "unresolved"}}):
+            wrapper.run("codex", "post-tool-use", self.binding)
+            receipt = self.workspace / ".agent-workspace/root-hook-delivery.jsonl"
+            first_receipt = receipt.read_bytes()
+            first_queue = manager_queue_path(self.fixture.rt).read_bytes()
+            for _ in range(100):
+                wrapper.run("codex", "post-tool-use", self.binding)
+            self.assertEqual(first_receipt, receipt.read_bytes())
+            self.assertEqual(first_queue, manager_queue_path(self.fixture.rt).read_bytes())
+            self.assertEqual(1, len(read_manager_queue(self.fixture.rt)["events"][0]["delivery_history"]))
+            close_event(self.fixture.rt, event["event_id"], "COMPLETE", "handled")
+            terminal_queue = manager_queue_path(self.fixture.rt).read_bytes()
+            with patch.dict(os.environ, {"HARNESS_EVENT_ID": event["event_id"]}):
+                for _ in range(10):
+                    wrapper.run("codex", "post-tool-use", self.binding)
+            self.assertEqual(first_receipt, receipt.read_bytes())
+            self.assertEqual(terminal_queue, manager_queue_path(self.fixture.rt).read_bytes())
 
     def test_plain_hook_is_queue_free_without_prepared_session(self) -> None:
         from orchestrator_harness.tests.support import write_json

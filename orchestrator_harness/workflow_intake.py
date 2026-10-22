@@ -284,11 +284,11 @@ def _require_native_planner(config, session, contract, intake):
     acceptance = read_record(epoch_dir(config.runtime_root, ref['epoch_id']) / 'lanes' / ref['lane_id']
                              / 'ORCHESTRATOR_ACCEPTANCE.json', ACCEPTANCE_SCHEMA)
     _validate_current_acceptance(config.runtime_root, ref['epoch_id'], lane, acceptance)
-    from .manager_queue import read_manager_queue
+    from .manager_queue import read_manager_queue, historical_events
     queue = read_manager_queue(config.runtime_root)
     if not any(event.get('lane_id') == ref['lane_id'] and event.get('run_id') == ref['run_id']
                and event.get('type') == 'COMPLETION_REVIEW_REQUIRED' and event['state'] == 'COMPLETE'
-               for event in queue['events']):
+               for event in historical_events(config.runtime_root, queue)):
         raise ConfigError('WORKFLOW_PLANNER_UNSETTLED: actual completed native planning event required')
     if contract['plan_review']['report']['reviewer_session_id'] in {intake['gateway_session_id'], intake['coordinator_session_id']}:
         raise ConfigError('WORKFLOW_REVIEW_IDENTITY: outer and coordinator cannot review')
@@ -321,6 +321,8 @@ def abandon(config, *, intake_id: str, request_sha256: str):
             for epoch in epochs.iterdir() if epochs.exists() else ():
                 if (epoch / 'lanes').exists() and any((epoch / 'lanes').iterdir()):
                     raise ConfigError('WORKFLOW_RECOVERY_UNSAFE: retained admitted lane history exists')
+                if (epoch / 'manager-history').exists():
+                    raise ConfigError('WORKFLOW_RECOVERY_UNSAFE: retained native manager archive exists')
                 archive = epoch / 'CLOSED_MANAGER_QUEUE.json'
                 if archive.exists() and read_record(archive, 'manager-queue/v1').get('events'):
                     raise ConfigError('WORKFLOW_RECOVERY_UNSAFE: retained native event history exists')

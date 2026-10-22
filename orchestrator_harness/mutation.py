@@ -22,7 +22,7 @@ import sys
 import tempfile
 import time
 import uuid
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
 from typing import BinaryIO
@@ -1105,11 +1105,90 @@ def publish_bytes(
     _publish(root, relative, data, expected=None, expected_root_identity=expected_root_identity)
 
 
+
+@contextmanager
+def synchronize_append_file(root: str | Path, relative: str | Path, *,
+                            acquire_timeout: float = 30):
+    """Synchronize an existing POSIX data inode before strict append proof.
+
+    A sibling lock alone need not invalidate another NFS client's data cache.
+    Callers must already hold that destination's RecordLock. This additional
+    native data-inode lock is held through strict append and close; it neither
+    authorizes a write nor creates an absent target. Windows keeps its existing
+    append/record-lock behavior, without a POSIX NFS coherency claim.
+    """
+    if os.name == "nt":
+        yield
+        return
+    import fcntl
+
+    root_path = _lexical(root)
+    rel = _relative(root_path, relative)
+    parent, name = _validate_chain(root_path, rel)
+    with _DirectoryAnchor(root_path, parent) as anchor:
+        try:
+            before = anchor.stat(name)
+        except FileNotFoundError:
+            # Do not pre-create or modify a target to acquire this lock. The
+            # first writer still uses ordinary strict exclusive creation.
+            yield
+            return
+        if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+                or getattr(before, "st_file_attributes", 0) & 0x400):
+            raise MutationConflict("append synchronization target is not one plain file")
+        descriptor = os.open(name, os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK
+                             | getattr(os, "O_CLOEXEC", 0), dir_fd=anchor.parent_fd)
+        locked = False
+        try:
+            def prove_identity():
+                anchor.assert_stable()
+                opened = os.fstat(descriptor)
+                current = anchor.stat(name)
+                if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
+                        or not stat.S_ISREG(current.st_mode) or current.st_nlink != 1
+                        or getattr(current, "st_file_attributes", 0) & 0x400
+                        or _identity(opened) != _identity(before)
+                        or _identity(current) != _identity(opened)):
+                    raise MutationConflict("append data identity changed while synchronizing")
+
+            prove_identity()
+            deadline = time.monotonic() + acquire_timeout
+            while True:
+                try:
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    locked = True
+                    break
+                except OSError as exc:
+                    if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                        raise
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise MutationError("append data lock acquisition timed out")
+                    time.sleep(min(0.005, remaining))
+            prove_identity()
+            yield
+        finally:
+            try:
+                if locked:
+                    fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
+
+
 def open_append_file(root: str | Path, relative: str | Path, *,
                      expected: TargetState | None = None,
                      expected_root_identity: tuple[int, int] | None = None,
-                     expected_directories: DirectoryExpectations | None = None) -> AnchoredAppendFile:
-    """Open/create one plain append file and retain all its ancestor handles."""
+                     expected_directories: DirectoryExpectations | None = None,
+                     shared_lock_creation: bool = False) -> AnchoredAppendFile:
+    """Open/create one plain append file and retain all its ancestor handles.
+
+    ``shared_lock_creation`` is only for persistent advisory lock files whose
+    contents are never written. If initially absent, concurrent creators may
+    open the same new inode; regular/single-link/no-follow and ancestor proofs
+    still apply. Ordinary append authorization remains strictly optimistic.
+    """
+    if shared_lock_creation and expected is not None:
+        raise ValueError("shared lock creation cannot replace explicit authorization")
     _require_supported_root_boundary()
     root_path = _lexical(root)
     rel = _relative(root_path, relative)
@@ -1125,17 +1204,23 @@ def open_append_file(root: str | Path, relative: str | Path, *,
             raise MutationConflict("append authority changed after preparation")
         _require_anchored_directories(anchor, expected_directories)
         before = expected if expected is not None else _capture_anchored(anchor, name, include_content=False)
-        _require_anchored_expected(anchor, name, before)
+        shared_creation = shared_lock_creation and not before.present
+        if not shared_creation:
+            _require_anchored_expected(anchor, name, before)
         if before.present and before.kind != "file":
             raise MutationConflict("append target is not a regular file")
         _after_target_proof()
         _require_anchored_directories(anchor, expected_directories)
-        _require_anchored_expected(anchor, name, before)
+        if not shared_creation:
+            _require_anchored_expected(anchor, name, before)
+        else:
+            anchor.assert_stable()
         if os.name == "nt":
             native, _ = _windows_file_handle(parent / name,
                 access=_GENERIC_READ | _GENERIC_WRITE,
                 share=_FILE_SHARE_READ | _FILE_SHARE_WRITE,
-                creation=_OPEN_EXISTING if before.present else _CREATE_NEW)
+                creation=(_OPEN_EXISTING if before.present else
+                          _OPEN_ALWAYS if shared_creation else _CREATE_NEW))
             import msvcrt
             try:
                 descriptor = msvcrt.open_osfhandle(int(native), os.O_RDWR | os.O_BINARY)
@@ -1145,7 +1230,9 @@ def open_append_file(root: str | Path, relative: str | Path, *,
         else:
             flags = os.O_RDWR | os.O_APPEND | os.O_NOFOLLOW | os.O_NONBLOCK | getattr(os, "O_CLOEXEC", 0)
             if not before.present:
-                flags |= os.O_CREAT | os.O_EXCL
+                flags |= os.O_CREAT
+                if not shared_creation:
+                    flags |= os.O_EXCL
             descriptor = os.open(name, flags, 0o600, dir_fd=anchor.parent_fd)
         try:
             file_handle = os.fdopen(descriptor, "a+b", closefd=True)

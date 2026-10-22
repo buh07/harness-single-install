@@ -401,6 +401,28 @@ class WorkerFileBoundaryTests(unittest.TestCase):
         self.assertFalse(path.exists())
         self.assertEqual(original, (worker / ".agent-workspace/processed-notifications" / path.name).read_bytes())
 
+    def test_archived_notice_retry_cannot_mutate_signal_identity(self):
+        rt, worker, lane, notice, path = self.notice_fixture()
+        atomic_write_json(path, notice)
+        original = path.read_bytes()
+        with patch.object(PreparedOutputTransaction, "write_bytes", side_effect=OSError("archive temporarily unavailable")):
+            self.assertTrue(monitor._consume_outbox(rt, "epoch", lane))
+        event = manager_queue.read_manager_queue(rt)["events"][0]
+        manager_queue.acknowledge_event(rt, event["event_id"])
+        manager_queue.close_event(rt, event["event_id"], "COMPLETE", "handled")
+        self.assertEqual([], manager_queue.read_manager_queue(rt)["events"])
+        atomic_write_json(path, {**notice, "summary": "mutated same signal"})
+        diagnostics = monitor._consume_outbox(rt, "epoch", lane)
+        self.assertTrue(diagnostics)
+        self.assertIn("reused with different bytes", diagnostics[0]["error"])
+        self.assertTrue(path.exists())
+        path.write_bytes(original)
+        self.assertEqual([], monitor._consume_outbox(rt, "epoch", lane))
+        self.assertFalse(path.exists())
+        hot = manager_queue.read_manager_queue(rt)
+        self.assertEqual([], hot["events"])
+        self.assertEqual(1, len(manager_queue.historical_events(rt, hot)))
+
 
 if __name__ == "__main__":
     unittest.main()

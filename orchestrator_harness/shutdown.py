@@ -27,7 +27,7 @@ from .epochs import (
 from .lanes import lane_operation_lock, read_lane, require_same_run, update_lane
 from .lane_cleanup import cleanup_is_proven, observe_controller_status, retired_lane_record
 from .leases import release_leases
-from .manager_queue import ManagerQueueError, read_manager_queue
+from .manager_queue import ManagerQueueError, read_manager_queue, historical_events
 from .records import RecordLock, atomic_write_json, read_record
 from .records import runtime_admission_lock
 from .setup import (
@@ -74,6 +74,7 @@ def _unresolved_manager_obligations(rt: Path) -> list[dict[str, Any]]:
             validate_queue_record(queue)
         else:
             queue = read_manager_queue(rt)
+        historical_events(rt, queue)  # history loss/corruption must not certify CLOSED
     except (ManagerQueueError, OSError, ValueError) as exc:
         raise ShutdownError(
             SHUTDOWN_RUNTIME_AMBIGUOUS,

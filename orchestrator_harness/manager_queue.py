@@ -1,4 +1,4 @@
-﻿"""The manager queue (managed) and the worker inbox.
+"""The manager queue (managed) and the worker inbox.
 
 Three components write the manager queue, each under the same short queue
 lock: the monitor (sole producer of events), ROOT (advances event state via
@@ -10,11 +10,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import json
+import hashlib
 from pathlib import Path
 from typing import Any
 
 from .activity_log import append_detail
-from .core import iso_utc, new_id, read_json, require_schema
+from .core import canonical_json, iso_utc, new_id, read_json, require_schema
 from .epochs import (
     MANAGER_QUEUE_SCHEMA,
     current_epoch_path,
@@ -94,6 +95,11 @@ def validate_queue_record(record: dict[str, Any]) -> None:
     events = record.get("events")
     if not isinstance(events, list):
         raise ManagerQueueError("MANAGER_QUEUE_INVALID", "manager events must be a list")
+    if (type(record.get("archived_event_count", 0)) is not int or record.get("archived_event_count", 0) < 0
+            or not isinstance(record.get("archived_event_xor", "0" * 64), str)
+            or len(record.get("archived_event_xor", "0" * 64)) != 64
+            or any(c not in "0123456789abcdef" for c in record.get("archived_event_xor", "0" * 64))):
+        raise ManagerQueueError("MANAGER_QUEUE_INVALID", "invalid bounded archive inventory")
     identities = set()
     for event in events:
         if (not isinstance(event, dict) or not isinstance(event.get("event_id"), str)
@@ -102,6 +108,10 @@ def validate_queue_record(record: dict[str, Any]) -> None:
                 or not isinstance(event.get("lane_id"), str) or not isinstance(event.get("run_id"), str)):
             raise ManagerQueueError("MANAGER_QUEUE_INVALID", "manager event identity, type or state is invalid")
         identities.add(event["event_id"])
+        references = event.get("preserved_delivery_history", [])
+        if (not isinstance(references, list) or any(not isinstance(value, str) or len(value) != 64
+                or any(c not in "0123456789abcdef" for c in value) for value in references)):
+            raise ManagerQueueError("MANAGER_QUEUE_INVALID", "invalid preserved delivery reference")
         history = event.get("history")
         delivery = event.get("delivery_history")
         if (not isinstance(history, list) or not history or not isinstance(delivery, list)
@@ -109,6 +119,155 @@ def validate_queue_record(record: dict[str, Any]) -> None:
                 or history[-1]["state"] != event["state"]
                 or any(not isinstance(item, dict) for item in delivery)):
             raise ManagerQueueError("MANAGER_QUEUE_INVALID", "manager event history is invalid")
+
+
+ARCHIVE_SCHEMA = "manager-event-archive/v1"
+
+
+def _digest(value: Any) -> str:
+    return hashlib.sha256(canonical_json(value)).hexdigest()
+
+
+def _archive_root(rt: Path, record: dict[str, Any]) -> Path:
+    # Hash every supplied identity, never interpolate event/dedup strings in paths.
+    from .epochs import epoch_dir
+    return epoch_dir(rt, record["epoch_id"]) / "manager-history" / _digest(record["queue_id"])
+
+
+def _archive_path(rt: Path, record: dict[str, Any], event_id: str) -> Path:
+    return _archive_root(rt, record) / "events" / (_digest(event_id) + ".json")
+
+
+def _immutable_json(path: Path, value: dict[str, Any]) -> None:
+    # Queue lock serializes publishers. Atomic no-follow publication is NFS-safe;
+    # an already published different record is evidence corruption, not replaceable.
+    try:
+        previous = read_record(path, value["schema"])
+    except FileNotFoundError:
+        atomic_write_json(path, value)
+    else:
+        if previous != value:
+            raise ManagerQueueError("MANAGER_ARCHIVE_CONFLICT", f"conflicting manager evidence: {path}")
+
+
+def _read_archived_event(rt: Path, record: dict[str, Any], event_id: str) -> dict[str, Any] | None:
+    path = _archive_path(rt, record, event_id)
+    try:
+        envelope = read_record(path, ARCHIVE_SCHEMA)
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError) as exc:
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", str(exc)) from exc
+    event = envelope.get("event")
+    if (envelope.get("epoch_id") != record["epoch_id"] or envelope.get("queue_id") != record["queue_id"]
+            or not isinstance(event, dict) or event.get("event_id") != event_id
+            or envelope.get("event_sha256") != _digest(event)):
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", f"invalid archived event: {path}")
+    validate_queue_record({"events": [event]})
+    if event["state"] not in {"COMPLETE", "BLOCKED"}:
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "archive cannot contain actionable work")
+    return event
+
+
+def find_event(rt: Path, record: dict[str, Any], event_id: str) -> dict[str, Any] | None:
+    """Explicit historical lookup; ordinary queue reads remain hot-only."""
+    return _find_event(record, event_id) or _read_archived_event(rt, record, event_id)
+
+
+def find_dedup_event(rt: Path, record: dict[str, Any], dedup_key: str) -> dict[str, Any] | None:
+    for event in record["events"]:
+        if event.get("dedup_key") == dedup_key:
+            return event
+    path = _archive_root(rt, record) / "dedup" / (_digest(dedup_key) + ".json")
+    try:
+        pointer = read_record(path, "manager-event-dedup/v1")
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError) as exc:
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", str(exc)) from exc
+    if (pointer.get("epoch_id") != record["epoch_id"] or pointer.get("queue_id") != record["queue_id"]
+            or pointer.get("dedup_key") != dedup_key or not isinstance(pointer.get("event_id"), str)):
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "invalid archived dedup identity")
+    event = _read_archived_event(rt, record, pointer["event_id"])
+    if event is None or event.get("dedup_key") != dedup_key:
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "archived dedup target is missing or foreign")
+    return event
+
+
+def historical_events(rt: Path, record: dict[str, Any]) -> list[dict[str, Any]]:
+    """Full evidence enumeration only for explicit provenance/close, never hooks."""
+    validate_queue_record(record)
+    events = {event["event_id"]: event for event in record["events"]}
+    root = _archive_root(rt, record) / "events"
+    if root.exists():
+        for path in sorted(root.iterdir()):
+            if path.name.startswith(".") and path.name.endswith(".lock"):
+                continue
+            envelope = read_record(path, ARCHIVE_SCHEMA)
+            archived = envelope.get("event")
+            event_id = archived.get("event_id") if isinstance(archived, dict) else None
+            if not isinstance(event_id, str) or path != _archive_path(rt, record, event_id):
+                raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "archive filename differs from event identity")
+            event = _read_archived_event(rt, record, event_id)
+            if event_id in events and events[event_id] != event:
+                raise ManagerQueueError("MANAGER_ARCHIVE_CONFLICT", "live/archive event bytes differ")
+            events[event_id] = event
+            if event.get("dedup_key") and find_dedup_event(rt, {**record, "events": []}, event["dedup_key"]) != event:
+                raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "archive dedup evidence is missing")
+    archived = [event for event_id, event in events.items() if _find_event(record, event_id) is None]
+    checksum = 0
+    for event in archived:
+        checksum ^= int(_digest(event), 16)
+    if (len(archived) != record.get("archived_event_count", 0)
+            or format(checksum, "064x") != record.get("archived_event_xor", "0" * 64)):
+        raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "archive inventory is missing or differs from durable hot manifest")
+    for event in events.values():
+        for digest in event.get("preserved_delivery_history", []):
+            path = _archive_root(rt, record) / "legacy-delivery" / (digest + ".json")
+            snapshot = read_record(path, "manager-delivery-history/v1")
+            if (_digest(snapshot) != digest or snapshot.get("epoch_id") != record["epoch_id"]
+                    or snapshot.get("queue_id") != record["queue_id"] or snapshot.get("event_id") != event["event_id"]):
+                raise ManagerQueueError("MANAGER_ARCHIVE_INVALID", "legacy delivery evidence differs")
+    return sorted(events.values(), key=lambda event: event["event_id"])
+
+
+def _compact_terminal(rt: Path, record: dict[str, Any]) -> bool:
+    terminal = [event for event in record["events"] if event["state"] in {"COMPLETE", "BLOCKED"}]
+    for event in terminal:
+        _immutable_json(_archive_path(rt, record, event["event_id"]), {
+            "schema": ARCHIVE_SCHEMA, "epoch_id": record["epoch_id"], "queue_id": record["queue_id"],
+            "event_sha256": _digest(event), "event": event})
+        if event.get("dedup_key"):
+            _immutable_json(_archive_root(rt, record) / "dedup" / (_digest(event["dedup_key"]) + ".json"), {
+                "schema": "manager-event-dedup/v1", "epoch_id": record["epoch_id"], "queue_id": record["queue_id"],
+                "dedup_key": event["dedup_key"], "event_id": event["event_id"]})
+    if terminal:
+        checksum = int(record.get("archived_event_xor", "0" * 64), 16)
+        for event in terminal:
+            checksum ^= int(_digest(event), 16)
+        record["archived_event_count"] = record.get("archived_event_count", 0) + len(terminal)
+        record["archived_event_xor"] = format(checksum, "064x")
+        record["events"] = [event for event in record["events"] if event["state"] not in {"COMPLETE", "BLOCKED"}]
+    return bool(terminal)
+
+
+def _normalize_deliveries(rt: Path, record: dict[str, Any]) -> None:
+    for event in record["events"]:
+        history = event["delivery_history"]
+        unique, seen = [], set()
+        for receipt in history:
+            key = _digest({field: receipt.get(field) for field in
+                           ("outcome", "source", "queue_id", "event_id", "session_id", "binding_id", "provider_id")})
+            if key not in seen:
+                seen.add(key)
+                unique.append(receipt)
+        if len(unique) != len(history):
+            snapshot = {"schema": "manager-delivery-history/v1", "epoch_id": record["epoch_id"],
+                        "queue_id": record["queue_id"], "event_id": event["event_id"], "delivery_history": history}
+            digest = _digest(snapshot)
+            _immutable_json(_archive_root(rt, record) / "legacy-delivery" / (digest + ".json"), snapshot)
+            event.setdefault("preserved_delivery_history", []).append(digest)
+            event["delivery_history"] = unique
 
 
 def _write_manager_queue(rt: Path, record: dict[str, Any]) -> None:
@@ -120,14 +279,22 @@ def _write_manager_queue(rt: Path, record: dict[str, Any]) -> None:
 def _update_manager_queue(
     rt: Path,
     mutate: Callable[[dict[str, Any]], tuple[Any, bool]],
+    *, compact: bool = False,
 ) -> Any:
     """Validate, mutate, and replace the manager queue in one transaction."""
     path = manager_queue_path(rt)
     with runtime_admission_lock(rt), RecordLock(path):
         record = read_manager_queue(rt)
+        if compact and _compact_terminal(rt, record):
+            _write_manager_queue(rt, record)
         result, changed = mutate(record)
         if changed:
+            _normalize_deliveries(rt, record)
+            # Persist terminal state before immutable archive publication, so a
+            # crash never regenerates a different terminal timestamp on retry.
             _write_manager_queue(rt, record)
+            if compact and _compact_terminal(rt, record):
+                _write_manager_queue(rt, record)
         return result
 
 
@@ -152,9 +319,9 @@ def promote_event(
     def mutate(record: dict[str, Any]) -> tuple[dict[str, Any], bool]:
         nonlocal admitted
         if dedup_key:
-            for existing in record.get("events", []):
-                if existing.get("dedup_key") == dedup_key:
-                    return existing, False
+            existing = find_dedup_event(rt, record, dedup_key)
+            if existing is not None:
+                return existing, False
         event = {
             "event_id": new_id(),
             "type": event_type,
@@ -183,7 +350,7 @@ def promote_event(
         admitted = True
         return event, True
 
-    event = _update_manager_queue(rt, mutate)
+    event = _update_manager_queue(rt, mutate, compact=True)
     if admitted:
         append_detail(
             rt,
@@ -204,7 +371,7 @@ def acknowledge_event(rt: Path, event_id: str, *, root_session_id: str | None = 
         raise ManagerQueueError("MANAGER_ACK_SCOPE_INVALID", "ACK requires both ROOT session and binding")
 
     def mutate(record: dict[str, Any]) -> tuple[dict[str, Any], bool]:
-        event = _find_event(record, event_id)
+        event = find_event(rt, record, event_id)
         if event is None:
             raise ManagerQueueError(
                 MANAGER_ACK_EVENT_NOT_FOUND, f"event not found: {event_id}"
@@ -228,7 +395,7 @@ def acknowledge_event(rt: Path, event_id: str, *, root_session_id: str | None = 
         event["history"].append(receipt)
         return event, True
 
-    return _update_manager_queue(rt, mutate)
+    return _update_manager_queue(rt, mutate, compact=True)
 
 
 def close_event(
@@ -243,7 +410,7 @@ def close_event(
             MANAGER_CLOSE_SUMMARY_REQUIRED, "close summary must be nonblank"
         )
     def mutate(record: dict[str, Any]) -> tuple[dict[str, Any], bool]:
-        event = _find_event(record, event_id)
+        event = find_event(rt, record, event_id)
         if event is None:
             raise ManagerQueueError(
                 MANAGER_ACK_EVENT_NOT_FOUND, f"event not found: {event_id}"
@@ -265,42 +432,38 @@ def close_event(
         event["summary"] = normalized_summary
         return event, True
 
-    return _update_manager_queue(rt, mutate)
+    return _update_manager_queue(rt, mutate, compact=True)
 
 
 def append_delivery_history(
-    rt: Path,
-    event_id: str,
-    *,
-    source: str = "hook",
-    queue_id: str | None = None,
-    session_id: str | None = None,
-    binding_id: str | None = None,
-) -> None:
-    """The managed PostToolUse hook appends a DELIVERED receipt only."""
-    def mutate(record: dict[str, Any]) -> tuple[None, bool]:
-        event = _find_event(record, event_id)
-        if event is None:
-            return None, False
-        receipt: dict[str, Any] = {
-            "outcome": "DELIVERED",
-            "source": source,
-            "event_id": event_id,
-            "at": iso_utc(),
-        }
-        if queue_id:
-            receipt["queue_id"] = queue_id
-        if session_id:
-            receipt["session_id"] = session_id
-        if binding_id:
-            receipt["binding_id"] = binding_id
-        receipt_queue_id = queue_id or record.get("queue_id")
-        if receipt_queue_id:
-            receipt["queue_id"] = receipt_queue_id
-        event.setdefault("delivery_history", []).append(receipt)
-        return None, True
+    rt: Path, event_id: str, *, source: str = "hook", queue_id: str | None = None,
+    session_id: str | None = None, binding_id: str | None = None,
+    provider_id: str | None = None,
+) -> bool:
+    """Publish at most one unresolved receipt for the exact observed scope.
 
-    _update_manager_queue(rt, mutate)
+    False means no new receipt: absent/terminal, foreign queue, incomplete scope,
+    or repeated delivery. It must not cause a local DELIVERED log entry.
+    """
+    if any(not isinstance(value, str) or not value.strip() for value in
+           (session_id, binding_id)):
+        return False
+    def mutate(record: dict[str, Any]) -> tuple[bool, bool]:
+        event = _find_event(record, event_id)
+        if (event is None or event["state"] not in {"PENDING", "ACKNOWLEDGED"}
+                or (queue_id is not None and queue_id != record["queue_id"])):
+            return False, False
+        receipt = {"outcome": "DELIVERED", "source": source, "event_id": event_id,
+                   "queue_id": record["queue_id"], "session_id": session_id,
+                   "binding_id": binding_id, "provider_id": provider_id or binding_id}
+        # Old receipts lacked provider_id: binding already identified provider.
+        for previous in event["delivery_history"]:
+            if all((previous.get(key, previous.get("binding_id")) if key == "provider_id" else previous.get(key)) == value
+                   for key, value in receipt.items()):
+                return False, False
+        event["delivery_history"].append({**receipt, "at": iso_utc()})
+        return True, True
+    return bool(_update_manager_queue(rt, mutate))
 
 
 def append_watch_delivery(

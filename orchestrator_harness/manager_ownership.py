@@ -203,7 +203,7 @@ def _require_native_plan_review(config: HarnessConfig, session: dict[str, Any],
     from .result_validation import read_result
     from .launch import _validate_current_acceptance
     from .review import ACCEPTANCE_SCHEMA
-    from .manager_queue import validate_queue_record
+    from .manager_queue import validate_queue_record, historical_events
     from .retry_policy import current_invocation_facts
     envelope = contract["plan_review"]
     ref = envelope["native_review"]
@@ -262,7 +262,7 @@ def _require_native_plan_review(config: HarnessConfig, session: dict[str, Any],
         raise ConfigError("MANAGER_SPLIT_REVIEW_RESULT: exact current read-only native RESULT/report linkage required")
     if not any(event.get("lane_id") == ref["lane_id"] and event.get("run_id") == ref["run_id"]
                and event.get("type") == "COMPLETION_REVIEW_REQUIRED" and event["state"] == "COMPLETE"
-               for event in queue["events"]):
+               for event in historical_events(config.runtime_root, queue)):
         raise ConfigError("MANAGER_SPLIT_REVIEW_UNSETTLED: completed native review event required")
 
 

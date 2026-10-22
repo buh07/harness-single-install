@@ -11,6 +11,7 @@ from __future__ import annotations
 import errno
 import json
 import os
+import stat
 import threading
 import time
 from contextlib import contextmanager
@@ -72,13 +73,16 @@ class RecordLock:
     The lock is a persistent sibling file whose OS lock is released when the
     owning process closes its handle (or dies).  A per-path in-process lock is
     held around the kernel lock so threads in one process serialize too.
+    An optional acquisition timeout uses nonblocking native contention waits;
+    it never retries the protected operation or bounds unrelated filesystem I/O.
     """
 
     _registry_guard = threading.Lock()
     _registry: dict[str, threading.Lock] = {}
     _registry_users: dict[str, int] = {}
 
-    def __init__(self, path: Path, *, root: Path | None = None) -> None:
+    def __init__(self, path: Path, *, root: Path | None = None,
+                 acquire_timeout: float | None = None) -> None:
         self.path = Path(path).absolute()
         self.root = Path(root).absolute() if root is not None else None
         self.key = os.path.normcase(str(self.path))
@@ -86,6 +90,7 @@ class RecordLock:
         self._handle: Any = None
         self._anchor: Any = None
         self._local: threading.Lock | None = None
+        self.acquire_timeout = acquire_timeout
 
     def __enter__(self) -> "RecordLock":
         if self._local is not None:
@@ -93,19 +98,25 @@ class RecordLock:
         with self._registry_guard:
             local = self._registry.setdefault(self.key, threading.Lock())
             self._registry_users[self.key] = self._registry_users.get(self.key, 0) + 1
+        deadline = (None if self.acquire_timeout is None else
+                    time.monotonic() + self.acquire_timeout)
         try:
-            local.acquire()
+            acquired = (local.acquire() if deadline is None else
+                        local.acquire(timeout=max(0, deadline - time.monotonic())))
+            if not acquired:
+                raise RecordError("record lock acquisition timed out")
         except BaseException:
             self._drop_registry_user(local)
             raise
         self._local = local
         handle = None
         try:
-            from .mutation import ensure_directory_path, open_append_file
+            from .mutation import MutationConflict, ensure_directory_path, open_append_file
             if self.root is None:
                 ensure_directory_path(self.lock_path.parent)
             root = self.root if self.root is not None else self.lock_path.parent
-            self._anchor = open_append_file(root, self.lock_path.relative_to(root))
+            self._anchor = open_append_file(root, self.lock_path.relative_to(root),
+                                            shared_lock_creation=True)
             handle = self._anchor.handle
             if os.name == "nt":
                 import msvcrt
@@ -113,18 +124,59 @@ class RecordLock:
                 handle.seek(0)
                 while True:
                     try:
-                        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                        msvcrt.locking(handle.fileno(),
+                                       msvcrt.LK_LOCK if deadline is None else msvcrt.LK_NBLCK, 1)
                         break
                     except OSError as exc:
                         # LK_LOCK gives up after ten native attempts. Admission
                         # can legitimately cover a longer worktree preparation.
                         # Repeat acquisition only, never the protected operation.
-                        if exc.errno != errno.EDEADLK:
-                            raise
+                        if deadline is None:
+                            if exc.errno != errno.EDEADLK:
+                                raise
+                        else:
+                            if exc.errno not in (errno.EACCES, errno.EAGAIN, errno.EDEADLK):
+                                raise
+                            self._wait_for_acquisition(deadline)
             else:
                 import fcntl
 
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+                if deadline is None:
+                    # Avoid NFS blocking-flock waiters that can remain stuck
+                    # after a holder exits. Genuine contention still waits
+                    # indefinitely by default; only acquisition is polled.
+                    while True:
+                        try:
+                            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            break
+                        except OSError as exc:
+                            if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                                raise
+                            time.sleep(0.005)
+                else:
+                    # NFS blocking flock waiters can stall after their holder
+                    # exits. Poll only native lock acquisition, never the
+                    # protected mutation, and fail closed on a bounded wait.
+                    while True:
+                        try:
+                            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            break
+                        except OSError as exc:
+                            if exc.errno not in (errno.EACCES, errno.EAGAIN):
+                                raise
+                            self._wait_for_acquisition(deadline)
+            # A persistent lock name must still identify the inode we locked,
+            # including after waiting for another process. Never silently hold
+            # a stale lock while a replacement name admits another writer.
+            self._anchor.anchor.assert_stable()
+            opened = os.fstat(handle.fileno())
+            current = self._anchor.anchor.stat(self.lock_path.name)
+            if (not stat.S_ISREG(current.st_mode)
+                    or getattr(current, "st_file_attributes", 0) & 0x400
+                    or current.st_nlink != 1
+                    or opened.st_nlink != 1
+                    or (current.st_dev, current.st_ino) != (opened.st_dev, opened.st_ino)):
+                raise MutationConflict("record lock identity changed while acquiring")
             self._handle = handle
             return self
         except BaseException:
@@ -137,6 +189,13 @@ class RecordLock:
             finally:
                 self._release_local()
             raise
+
+    @staticmethod
+    def _wait_for_acquisition(deadline: float) -> None:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RecordError("record lock acquisition timed out")
+        time.sleep(min(0.005, remaining))
 
     def __exit__(self, exc_type: object, exc: object, traceback: object) -> None:
         handle = self._handle

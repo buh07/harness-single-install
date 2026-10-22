@@ -54,6 +54,20 @@ changes leases, publishes relays, recovers lanes, and classifies failures.
 
 ## Coding operating loop
 
+### Manager event retention
+
+The managed queue keeps all unresolved `PENDING`/`ACKNOWLEDGED` obligations.
+Normal compacting mutations archive already-durable terminal events before hot
+removal; exact event/deduplication and explicit provenance readers retain scoped
+historical access. Ordinary hot reads never rehydrate the archive. Hook delivery
+is idempotent per exact queue/event/source/provider/native-session/binding scope,
+not an acknowledgement; terminal/stale selections cannot claim new delivery.
+Legacy receipt normalization preserves the previous history first. Full history
+still grows durably; no unresolved-work or distinct-scope cap is imposed. See
+[retention, crash boundaries and safe upgrade guidance](../docs/MANAGER_QUEUE_RETENTION.md).
+
+### Native operating sequence
+
 ```text
 main orchestrator freezes a stable base and plans branch/worktree lanes
   -> launches manager-selected lanes and lets exact named locks serialize contention

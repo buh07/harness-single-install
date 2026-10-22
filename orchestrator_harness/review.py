@@ -21,6 +21,7 @@ from .manager_queue import (
     ManagerQueueError,
     close_event,
     read_manager_queue,
+    find_event,
 )
 from .records import RecordLock, atomic_write_json
 from .records import runtime_admission_lock
@@ -141,11 +142,7 @@ def _resolve_lane_managed(
         queue = read_manager_queue(rt)
     except ManagerQueueError as exc:
         raise ReviewError(COMPLETION_REVIEW_EVENT_INVALID, str(exc)) from exc
-    event = None
-    for candidate in queue.get("events", []):
-        if candidate.get("event_id") == event_id:
-            event = candidate
-            break
+    event = find_event(rt, queue, event_id)
     if event is None:
         raise ReviewError(
             COMPLETION_REVIEW_EVENT_INVALID, f"review event not found: {event_id}"

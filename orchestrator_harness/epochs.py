@@ -1,4 +1,4 @@
-﻿"""Epochs: one active epoch, launcher-owned open/reuse/close.
+"""Epochs: one active epoch, launcher-owned open/reuse/close.
 
 The public launcher owns the epoch records.  It creates a new epoch only when
 none is active and otherwise reuses the active epoch while its immutable
@@ -244,7 +244,7 @@ def _finish_open_epoch(rt: Path, state: dict[str, Any]) -> dict[str, Any]:
 def close_epoch(rt: Path, epoch_id: str) -> None:
     """Close a proven-empty epoch under admission, with durable closing intent."""
     from .lanes import reconcile_active_lanes
-    from .manager_queue import read_manager_queue, validate_queue_record
+    from .manager_queue import read_manager_queue, validate_queue_record, historical_events
 
     with runtime_admission_lock(rt):
         marker_path = current_epoch_path(rt)
@@ -280,12 +280,23 @@ def close_epoch(rt: Path, epoch_id: str) -> None:
                 # epoch replaces the fixed queue. This is an inert evidence
                 # snapshot, never a second queue or source of actionable work.
                 archive = epoch_dir(rt, epoch_id) / "CLOSED_MANAGER_QUEUE.json"
+                # Materialize immutable full history only at closure, not on
+                # ordinary hook/watch reads. Validate bounded archive inventory.
+                queue = {**queue, "events": historical_events(rt, queue),
+                         "archived_event_count": 0, "archived_event_xor": "0" * 64}
                 try:
                     preserved = read_record(archive, MANAGER_QUEUE_SCHEMA)
                 except FileNotFoundError:
                     atomic_write_json(archive, queue)
                 else:
-                    if preserved != queue:
+                    validate_queue_record(preserved)
+                    # Saved v1/v2 snapshots retain their exact original bytes,
+                    # event order and lack of new bounded inventory fields.
+                    # Compare full scoped event identities/content, not formatting.
+                    ignored = {"events", "archived_event_count", "archived_event_xor"}
+                    if ({key: value for key, value in preserved.items() if key not in ignored}
+                            != {key: value for key, value in queue.items() if key not in ignored}
+                            or historical_events(rt, preserved) != queue["events"]):
                         raise EpochError("closed manager queue evidence differs; preserve and reconcile")
             with RecordLock(marker_path):
                 if marker is not None:

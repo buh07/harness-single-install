@@ -49,6 +49,7 @@ from .manager_queue import (
     append_assignment,
     close_event,
     read_manager_queue,
+    find_event,
 )
 
 SEND_LANE_NOT_FOUND = "SEND_LANE_NOT_FOUND"
@@ -105,10 +106,7 @@ def _manager_acknowledge(event_id: str) -> dict[str, Any]:
             scope = {"root_session_id": session_id, "binding_id": binding_id}
         with runtime_admission_lock(rt), RecordLock(manager_queue_path(rt)):
             queue = read_manager_queue(rt)
-        event = next(
-            (item for item in queue.get("events", []) if item.get("event_id") == event_id),
-            None,
-        )
+        event = find_event(rt, queue, event_id)
         if event is None:
             raise ManagerQueueError(
                 MANAGER_ACK_EVENT_NOT_FOUND, f"event not found: {event_id}"
@@ -166,10 +164,7 @@ def _manager_close(
     rt = config.runtime_root
     try:
         queue = read_manager_queue(rt)
-        event = next(
-            (item for item in queue.get("events", []) if item.get("event_id") == event_id),
-            None,
-        )
+        event = find_event(rt, queue, event_id)
         if event is None:
             raise ManagerQueueError(
                 MANAGER_CLOSE_NOT_ACKNOWLEDGED, f"event not found: {event_id}"

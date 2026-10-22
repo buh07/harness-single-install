@@ -233,8 +233,10 @@ class Addendum3ProductTests(unittest.TestCase):
         )
         resume._consume_resume_signal(self.runtime, "lane-1", "run-old")
         queue = read_manager_queue(self.runtime)
-        self.assertEqual("COMPLETE", queue["events"][0]["state"])
-        self.assertTrue(queue["events"][0]["history"][-1]["summary"])
+        self.assertEqual([], queue["events"])
+        completed = manager_queue.find_event(self.runtime, queue, event["event_id"])
+        self.assertEqual("COMPLETE", completed["state"])
+        self.assertTrue(completed["history"][-1]["summary"])
 
     def test_monitor_recovers_malformed_pair_and_one_lost_review_event(self) -> None:
         lane = self._reviewable_lane()
@@ -791,8 +793,14 @@ class Addendum3ProductTests(unittest.TestCase):
             resume=True,
         )
         spawned.assert_called_once()
-        make_boundary.assert_called_once_with(456, windows_job_handle=789)
-        child.resume.assert_called_once_with()
+        make_boundary.assert_called_once_with(
+            456, windows_job_handle=789 if os.name == "nt" else None)
+        if os.name == "nt":
+            child.take_job_handle.assert_called_once_with()
+            child.resume.assert_called_once_with()
+        else:
+            child.take_job_handle.assert_not_called()
+            child.resume.assert_not_called()
         self.assertEqual(tuple(expected_argv), execution.argv)
         self.assertEqual("saved-native-session", execution.session_id)
 

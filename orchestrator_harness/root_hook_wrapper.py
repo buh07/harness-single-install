@@ -9,10 +9,12 @@ from typing import Any
 
 from .core import iso_utc
 from .config import compute_config_identity, load_config, load_resource_manifest, path_identity
-from .mutation import ensure_directory_path, open_append_file, read_bytes, safe_relative_path
+from .mutation import ensure_directory_path, open_append_file, read_bytes, safe_relative_path, synchronize_append_file
 from .manager_queue import append_delivery_history
+from .epochs import read_current_epoch
 from .root_hook_dispatch import dispatch, unresolved_event_ids
 from .root_session import resolve_root_session
+from .records import RecordLock
 
 BINDING_SCHEMA = "harness-hook-binding/v1"
 DECISIONS = frozenset({"ALLOW", "NOTICE", "REJECT"})
@@ -77,10 +79,16 @@ def _workspace_path(binding_path: Path, relative: object, field: str) -> Path:
 def _append_jsonl(path: Path, value: dict[str, Any]) -> None:
     path = path.absolute()
     ensure_directory_path(path.parent)
-    with open_append_file(path.parent, path.name) as handle:
-        handle.write((json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"))
-        handle.flush()
-        os.fsync(handle.fileno())
+    # Serialize only this diagnostic destination, including authorization and
+    # close. Release before dispatch/queue work; do not retry a failed append.
+    with RecordLock(path, acquire_timeout=30):
+        # Lock the actual POSIX data inode too: a sibling lock alone does not
+        # provide cross-client NFS data-cache coherence.
+        with synchronize_append_file(path.parent, path.name, acquire_timeout=30):
+            with open_append_file(path.parent, path.name) as handle:
+                handle.write((json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"))
+                handle.flush()
+                os.fsync(handle.fileno())
 
 
 def _notice_text(notice: object) -> str:
@@ -146,7 +154,9 @@ def _run_owned(provider_id: str, boundary: str, binding_path: Path) -> dict[str,
             if event_id
             else (unresolved_event_ids(Path(binding["runtime_root"])) if managed else [])
         )
-        if boundary == "post-tool-use" and event_ids:
+        delivery_epoch = (read_current_epoch(Path(binding["runtime_root"]))
+                          if boundary == "post-tool-use" and event_ids else None)
+        if boundary == "post-tool-use" and event_ids and delivery_epoch is not None:
             receipt_path = _workspace_path(
                 binding_path,
                 binding.get("delivery_receipt_path"),
@@ -158,13 +168,17 @@ def _run_owned(provider_id: str, boundary: str, binding_path: Path) -> dict[str,
                     "source": "hook",
                     "event_id": selected_event_id,
                     "provider_id": provider_id,
+                    "queue_id": delivery_epoch["queue_id"],
                     "at": iso_utc(),
                     **scope,
                 }
                 try:
-                    append_delivery_history(
-                        Path(binding["runtime_root"]), selected_event_id, **scope
+                    recorded = append_delivery_history(
+                        Path(binding["runtime_root"]), selected_event_id, provider_id=provider_id,
+                        queue_id=delivery_epoch["queue_id"], **scope
                     )
+                    if not recorded:
+                        continue
                 except Exception as exc:
                     receipt.update({"outcome": "DELIVERY_FAILED", "error": str(exc)})
                     if decision.get("decision") == "ALLOW":

@@ -17,9 +17,11 @@ class ManagerQueueCloseTests(unittest.TestCase):
 
     def _record(self) -> dict[str, object]:
         return {
+            "epoch_id": "epoch", "queue_id": "queue",
             "events": [
                 {
-                    "event_id": "event-1",
+                    "event_id": "event-1", "delivery_history": [],
+                    "type": "LANE_STATUS_CHANGED", "lane_id": "lane", "run_id": "run",
                     "state": "ACKNOWLEDGED",
                     "history": [{"state": "ACKNOWLEDGED", "at": "earlier"}],
                 }
@@ -57,6 +59,7 @@ class ManagerQueueCloseTests(unittest.TestCase):
     def test_terminal_summary_is_normalized_and_persisted(self) -> None:
         runtime = self.runtime
         for outcome in ("COMPLETE", "BLOCKED"):
+            runtime = self.runtime / outcome
             record = self._record()
             with (
                 mock.patch.object(
@@ -78,7 +81,8 @@ class ManagerQueueCloseTests(unittest.TestCase):
             self.assertEqual(
                 "operator decision", event["history"][-1]["summary"]
             )
-            write_queue.assert_called_once_with(runtime, record)
+            self.assertEqual(2, write_queue.call_count)
+            self.assertEqual([], record["events"])
 
 
 if __name__ == "__main__":

@@ -11,6 +11,8 @@ class WorkflowHashInputsTests(unittest.TestCase):
         instructions='skills/harness-outcome-workflow/references/planning-review.md'
         self.assertIn(authority,HARNESS_INPUTS)
         self.assertIn(instructions,HARNESS_INPUTS)
+        self.assertIn('orchestrator_harness/records.py',HARNESS_INPUTS)
+        self.assertIn('orchestrator_harness/mutation.py',HARNESS_INPUTS)
         with tempfile.TemporaryDirectory(prefix='workflow-input-hash-') as directory:
             base=Path(directory);harness=base/'harness';workspace=base/'manager'
             for name in (*HARNESS_INPUTS,'orchestrator_harness/provider_adapters/codex/launcher_binding.py'):
@@ -18,7 +20,7 @@ class WorkflowHashInputsTests(unittest.TestCase):
                 path=harness/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'original fixture bytes\n')
             config=workspace/'.codex/config.toml';config.parent.mkdir(parents=True);config.write_bytes(b'')
             before=configuration_hashes(harness,workspace)
-            for name in (authority,instructions):
+            for name in (authority,instructions,'orchestrator_harness/manager_queue.py','orchestrator_harness/epochs.py','orchestrator_harness/shutdown.py','orchestrator_harness/records.py','orchestrator_harness/mutation.py'):
                 path=harness/name;path.write_bytes(b'changed fixture bytes\n')
                 after=configuration_hashes(harness,workspace)
                 self.assertNotEqual(before[name],after[name])

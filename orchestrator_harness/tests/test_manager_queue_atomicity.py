@@ -97,7 +97,7 @@ class ManagerQueueAtomicityTests(unittest.TestCase):
                 manager_queue, "atomic_write_json", side_effect=guarded_write
             ),
         ):
-            manager_queue.append_delivery_history(self.runtime, "event-1")
+            manager_queue.append_delivery_history(self.runtime, "event-1", session_id="session", binding_id="codex")
             manager_queue.close_event(
                 self.runtime,
                 "event-1",
@@ -106,7 +106,8 @@ class ManagerQueueAtomicityTests(unittest.TestCase):
             )
 
         record = manager_queue.read_manager_queue(self.runtime)
-        event = record["events"][0]
+        self.assertEqual([], record["events"])
+        event = manager_queue.find_event(self.runtime, record, "event-1")
         self.assertEqual("COMPLETE", event["state"])
         self.assertEqual(1, len(event["delivery_history"]))
         self.assertFalse(held)

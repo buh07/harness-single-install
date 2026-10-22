@@ -36,7 +36,7 @@ from .epochs import (
     read_epoch_state,
 )
 from .lanes import LANE_SCHEMA, read_lane, update_lane, lane_operation_lock, require_same_run
-from .manager_queue import ManagerQueueError, promote_event, read_manager_queue
+from .manager_queue import ManagerQueueError, promote_event, read_manager_queue, find_dedup_event
 from .records import RecordLock, atomic_write_json, atomic_write_bytes, read_record
 from .records import runtime_admission_lock
 from .mutation import TargetState, MutationConflict, delete as anchored_delete
@@ -282,11 +282,8 @@ def _recover_lost_review_event(
         queue = read_manager_queue(rt)
     except ManagerQueueError:
         raise
-    if any(
-        event.get("dedup_key") == dedup_key
-        and event.get("state") in {"COMPLETE", "BLOCKED"}
-        for event in queue.get("events", [])
-    ):
+    prior = find_dedup_event(rt, queue, dedup_key)
+    if prior is not None and prior["state"] in {"COMPLETE", "BLOCKED"}:
         # A terminal event without its durable pair is a lost review, not a
         # reason to suppress recovery.  The new event remains uniquely
         # associated with the same lane/run/epoch.
@@ -476,9 +473,9 @@ def _consume_outbox(
                 archived = output.admit(processed / path.name)
                 output.ensure_parent(archived)
                 dedup = f"worker-notice:{lane['lane_id']}:{lane['run_id']}:{notice['signal_id']}"
-                for existing in read_manager_queue(rt)["events"]:
-                    if existing.get("dedup_key") == dedup and existing.get("data", {}).get("notice_sha256") != digest:
-                        raise ValueError("notice identity was reused with different bytes")
+                existing = find_dedup_event(rt, read_manager_queue(rt), dedup)
+                if existing is not None and existing.get("data", {}).get("notice_sha256") != digest:
+                    raise ValueError("notice identity was reused with different bytes")
                 require_same_run(read_lane(rt, epoch_id, lane["lane_id"]), lane)
                 phase = "outbox_promotion"
                 event = promote_event(

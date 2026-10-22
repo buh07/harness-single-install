@@ -183,6 +183,14 @@ actionable lane/resource state and records a durable per-session/queue delivery 
 queue events. `disabled` (plain) omits the manager
 queue; lanes run without ROOT-to-worker assignments and plain scan/watch never reads it.
 
+Repeated hook deliveries are receipt-idempotent for the exact native scope.
+All unresolved work stays hot; settled manager events move to immutable
+epoch/queue-scoped history, preserving exact historical lookup and deduplication.
+This reduces hot-queue growth, not total retained evidence. See
+[manager queue retention and safe upgrades](docs/MANAGER_QUEUE_RETENTION.md).
+The [validation report](docs/MANAGER_QUEUE_VALIDATION.md) separates real NFS
+concurrency checks from offline fixtures and platform limitations.
+
 ## Providers and the adapter catalog
 
 Three provider IDs ship: `codex`, `claude-code`, and `qwen-code`. Each has one tree under
